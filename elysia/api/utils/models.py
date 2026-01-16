@@ -80,6 +80,18 @@ models = {
         },
     },
     "openrouter/google": {
+        "gemini-3-flash-preview": {
+            "name": "gemini-3-flash-preview",
+            "api_keys": ["openrouter_api_key"],
+            "speed": "fast",
+            "accuracy": "high",
+        },
+        "gemini-3-pro-preview": {
+            "name": "gemini-3-pro-preview",
+            "api_keys": ["openrouter_api_key"],
+            "speed": "slow",
+            "accuracy": "high",
+        },
         "gemini-2.5-flash": {
             "name": "gemini-2.5-flash",
             "api_keys": ["openrouter_api_key"],
@@ -106,6 +118,18 @@ models = {
         },
     },
     "gemini": {
+        "gemini-3-flash-preview": {
+            "name": "gemini-3-flash-preview",
+            "api_keys": ["gemini_api_key"],
+            "speed": "fast",
+            "accuracy": "high",
+        },
+        "gemini-3-pro-preview": {
+            "name": "gemini-3-pro-preview",
+            "api_keys": ["gemini_api_key"],
+            "speed": "slow",
+            "accuracy": "high",
+        },
         "gemini-2.5-flash": {
             "name": "gemini-2.5-flash",
             "api_keys": ["gemini_api_key"],
