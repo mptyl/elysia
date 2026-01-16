@@ -496,7 +496,7 @@ class DecisionNode:
                 Status(str(self.options[output.function_name]["status"])),
             ]
 
-            if output.function_name != "text_response":
+            if output.function_name not in ("text_response", "direct_answer"):
                 results.append(Response(output.message_update))
 
             if tree_data.settings.USE_FEEDBACK and len(uuids) > 0:

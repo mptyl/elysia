@@ -305,7 +305,7 @@ class UserManager:
                 Controls the LM history being saved in the tree, and some other variables.
                 Defaults to False.
         """
-        # self.add_user_local(user_id)
+        await self.add_user_local(user_id)
         local_user = await self.get_user_local(user_id)
         tree_manager: TreeManager = local_user["tree_manager"]
         if not tree_manager.tree_exists(conversation_id):
@@ -537,6 +537,7 @@ class UserManager:
         save_trees_to_weaviate: bool | None = None,
         wcd_url: str | None = None,
         wcd_api_key: str | None = None,
+        disable_rag: bool = False,
     ):
         """
         Wrapper for the TreeManager.process_tree() method.
@@ -561,6 +562,7 @@ class UserManager:
                 Defaults to the value of the `wcd_url` setting in the frontend config.
             wcd_api_key (str | None): Required. The API key for the Weaviate Cloud Database instance used to save the tree.
                 Defaults to the value of the `wcd_api_key` setting in the frontend config.
+            disable_rag (bool): Optional. Whether to disable RAG tools.
         """
 
         if self.check_user_timeout(user_id):
@@ -594,6 +596,7 @@ class UserManager:
             training_route,
             collection_names,
             local_user["client_manager"],
+            disable_rag=disable_rag,
         ):
             yield yielded_result
             await self.update_user_last_request(user_id)

@@ -18,6 +18,8 @@ async def get_saved_trees(
 
     headers = {"Cache-Control": "no-cache"}
 
+    # Ensure user is initialized
+    await user_manager.add_user_local(user_id)
     user = await user_manager.get_user_local(user_id)
     save_location_client_manager = user["frontend_config"].save_location_client_manager
     if not save_location_client_manager.is_client:
@@ -93,6 +95,8 @@ async def delete_tree(
     user_manager: UserManager = Depends(get_user_manager),
 ):
     try:
+        # Ensure user is initialized
+        await user_manager.add_user_local(user_id)
         await user_manager.delete_tree(user_id, conversation_id)
         return JSONResponse(content={"error": ""}, status_code=200)
     except Exception as e:

@@ -45,6 +45,7 @@ from elysia.tools.text.text import (
     FakeTextResponse,
     CitedSummarizer,
 )
+from elysia.tools.text.direct_answer import DirectAnswer
 from elysia.tree.util import ForcedTextResponse
 from elysia.util.async_util import asyncio_run
 from elysia.tree.objects import CollectionData, TreeData, Atlas, Environment
@@ -225,6 +226,7 @@ class Tree:
             status="Choosing a base-level task...",
         )
         self.add_tool(branch_id="base", tool=CitedSummarizer)
+        self.add_tool(branch_id="base", tool=DirectAnswer)
         self.add_tool(branch_id="base", tool=FakeTextResponse)
 
         self.add_branch(
@@ -259,6 +261,7 @@ class Tree:
             status="Choosing a base-level task...",
         )
         self.add_tool(branch_id="base", tool=CitedSummarizer)
+        self.add_tool(branch_id="base", tool=DirectAnswer)
         self.add_tool(branch_id="base", tool=FakeTextResponse)
         self.add_tool(branch_id="base", tool=Aggregate)
         self.add_tool(branch_id="base", tool=Query, summariser_in_tree=True)
@@ -1437,6 +1440,7 @@ class Tree:
         query_id: str | None = None,
         close_clients_after_completion: bool = True,
         _first_run: bool = True,
+        disable_rag: bool = False,
         **kwargs,
     ) -> AsyncGenerator[dict | None, None]:
         """
@@ -1484,6 +1488,7 @@ class Tree:
             self.query_id_to_prompt[query_id] = user_prompt
             self.prompt_to_query_id[user_prompt] = query_id
             self.tree_data.set_property("user_prompt", user_prompt)
+            self.tree_data.rag_enabled = not disable_rag
             self._update_conversation_history("user", user_prompt)
             self.user_prompt = user_prompt
 
@@ -1621,9 +1626,10 @@ class Tree:
                 self.current_decision.function_inputs,
             )
 
-            # end criteria, task picked is "text_response" or model chooses to end conversation
+            # end criteria, task picked is "text_response" or "direct_answer" or model chooses to end conversation
             completed = (
                 self.current_decision.function_name == "text_response"
+                or self.current_decision.function_name == "direct_answer"
                 or self.current_decision.end_actions
                 or self.current_decision.impossible
                 or self.tree_data.num_trees_completed > self.tree_data.recursion_limit
@@ -1743,10 +1749,13 @@ class Tree:
 
             # firstly, if we reached the end of a tree at a node that shouldn't be the end, call text response tool here to respond
             if (
-                not current_decision_node.options[self.current_decision.function_name][
-                    "end"
-                ]
-                or force_text_response
+                (
+                    not current_decision_node.options[self.current_decision.function_name][
+                        "end"
+                    ]
+                    or force_text_response
+                )
+                and self.current_decision.function_name != "direct_answer"
             ):
                 with ElysiaKeyManager(self.settings):
                     async for result in self.tools["forced_text_response"](
@@ -1817,6 +1826,7 @@ class Tree:
                 training_route=training_route,
                 query_id=query_id,
                 _first_run=False,
+                disable_rag=disable_rag,
             ):
                 yield result
 

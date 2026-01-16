@@ -591,6 +591,7 @@ class TreeData:
         num_trees_completed: int | None = None,
         recursion_limit: int | None = None,
         settings: Settings | None = None,
+        rag_enabled: bool = True,
     ):
         if settings is None:
             self.settings = environment_settings
@@ -627,6 +628,8 @@ class TreeData:
             self.recursion_limit = 3
         else:
             self.recursion_limit = recursion_limit
+
+        self.rag_enabled = rag_enabled
 
         # -- Atlas --
         self.atlas = atlas

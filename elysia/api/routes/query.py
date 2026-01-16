@@ -74,10 +74,16 @@ async def process(data: dict, websocket: WebSocket, user_manager: UserManager):
 
     try:
         # optional arguments
+        # optional arguments
         if "route" in data:
             route = data["route"]
         else:
             route = ""
+
+        if "disable_rag" in data:
+            disable_rag = data["disable_rag"]
+        else:
+            disable_rag = False
 
         # send ner response in advance
         await websocket.send_json(
@@ -96,6 +102,7 @@ async def process(data: dict, websocket: WebSocket, user_manager: UserManager):
             query_id=data["query_id"],
             training_route=route,
             collection_names=data["collection_names"],
+            disable_rag=disable_rag,
         ):
             if asyncio.iscoroutine(yielded_result):
                 yielded_result = await yielded_result

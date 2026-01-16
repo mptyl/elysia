@@ -67,10 +67,15 @@ class Aggregate(Tool):
         Only available if:
         1. There is a Weaviate connection
         2. There are collections available
+        3. RAG is enabled
         If this tool is not available, inform the user that they should make sure they have set the WCD_URL and WCD_API_KEY in the settings.
         And also they should make sure they have added collections to the tree.
         """
-        return client_manager.is_client and tree_data.collection_names != []
+        return (
+            client_manager.is_client
+            and tree_data.collection_names != []
+            and tree_data.rag_enabled
+        )
 
     def _find_previous_aggregations(
         self, environment: dict, collection_names: list[str]

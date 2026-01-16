@@ -397,6 +397,7 @@ class TreeManager:
         training_route: str = "",
         collection_names: list[str] = [],
         client_manager: ClientManager | None = None,
+        disable_rag: bool = False,
     ):
         """
         Process a tree in the TreeManager.
@@ -413,6 +414,7 @@ class TreeManager:
                 If not supplied, all collections will be used.
             client_manager (ClientManager | None): Optional. A client manager to use for the query.
                 If not supplied, a new ClientManager will be created.
+            disable_rag (bool): Optional. Whether to disable RAG tools.
         """
 
         if query_id is None:
@@ -435,6 +437,7 @@ class TreeManager:
                 query_id=query_id,
                 training_route=training_route,
                 close_clients_after_completion=False,
+                disable_rag=disable_rag,
             ):
                 yield yielded_result
                 self.update_tree_last_request(conversation_id)
