@@ -46,6 +46,7 @@ provider_to_models = {
         "claude-3-7-sonnet-20250219",
         "claude-3-5-haiku-20241022",
     ],
+    # [ATHENA-CUSTOM] Added OpenRouter and Gemini 3 support
     "openrouter/openai": [
         "gpt-4.1",
         "gpt-4.1-mini",
@@ -74,6 +75,7 @@ provider_to_models = {
         "gemini-2.5-pro",
         "gemini-2.5-flash-lite",
     ],
+    # [/ATHENA-CUSTOM]
 }
 
 provider_to_api_keys = {
