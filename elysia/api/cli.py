@@ -23,7 +23,7 @@ def cli():
 @cli.command()
 @click.option(
     "--port",
-    default=8000,
+    default=8090,
     help="FastAPI Port",
 )
 @click.option(

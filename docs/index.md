@@ -44,7 +44,7 @@ Then, either run the app via
 elysia start
 ```
 
-(Additionally you can use `--port XXXX` to run from a different port, default is 8000). Or import Elysia with python and use it directly there.
+(Additionally you can use `--port XXXX` to run from a different port, default is 8090). Or import Elysia with python and use it directly there.
 
 ## Usage
 
