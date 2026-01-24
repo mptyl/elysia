@@ -610,10 +610,11 @@ class Warning(Update):
 class Completed(Update):
     """
     Completed message to be sent to the frontend (tree is complete all recursions).
+    Includes rag_enabled to indicate whether RAG was enabled for this query.
     """
 
-    def __init__(self):
-        Update.__init__(self, "completed", {})
+    def __init__(self, rag_enabled: bool = True):
+        Update.__init__(self, "completed", {"rag_enabled": rag_enabled})
 
 
 class Result(Return):

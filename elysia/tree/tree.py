@@ -1776,7 +1776,7 @@ class Tree:
             )
 
             yield await self.returner(
-                Completed(), query_id=self.prompt_to_query_id[user_prompt]
+                Completed(rag_enabled=self.tree_data.rag_enabled), query_id=self.prompt_to_query_id[user_prompt]
             )
 
             self.settings.logger.debug(
