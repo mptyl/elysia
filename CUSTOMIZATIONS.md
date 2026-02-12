@@ -24,5 +24,31 @@ This document tracks all divergences from the upstream `weaviate/elysia` reposit
 - **Change**: [NEW] Tests for the RAG bypass functionality.
 
 ## Tools & Data
-- **File**: `weaviate/import/import_pdfs.py`
 - **Change**: [NEW] script to batch upload PDFs to Weaviate with custom embedding support (Cohere).
+- **File**: `weaviate/import/import_jeopardy_question.py`
+- **Change**: script for importing jeopardy questions.
+- **File**: `elysia/api/custom_tools.py`
+- **Change**: Includes `TellAJoke` tool and imports for `BasicLinearRegression`.
+
+## Knowledge & Specs (Root Level)
+- **Folder**: `openspec/`
+- **Change**: [NEW] Cross-project specifications and agent conventions.
+- **Folder**: `project_design/`
+- **Change**: [NEW] Architecture analysis and implementation plans.
+
+## Upstream Synchronization Risks
+
+> **CRITICAL**: This fork modifies core logic files. Expect merge conflicts during `git pull upstream main`.
+
+### High Risk Files (Manual Resolution Likely Required)
+1. **`elysia/config.py`**:
+   - **Risk**: High. We inject custom providers (Gemini, OpenRouter) into `provider_to_models` and `Settings`.
+   - **Resolution**: preserve Athena's `provider_to_models` additions and `Settings` defaults while accepting upstream's new configurations.
+
+2. **`elysia/tree/util.py`**:
+   - **Risk**: High. We modified the `run_tree` logic to support `direct_answer` (RAG bypass).
+   - **Resolution**: Ensure the bypass check remains at the start of the execution flow.
+
+### Maintenance Protocol
+- Always review this document before resolving conflicts.
+- For `config.py`, verify if upstream added support for new models that might supersede our custom injections.
