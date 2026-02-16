@@ -62,6 +62,7 @@ from elysia.util.parsing import remove_whitespace
 from elysia.guardrails.ethical_guard import (
     run_pre_query_check,
     generate_ethical_refusal,
+    generate_ethical_guidance,
 )
 from elysia.util.collection import retrieve_all_collection_names
 
@@ -1527,10 +1528,10 @@ class Tree:
                     )
                 )
 
-        # [ATHENA-CUSTOM] Pre-query ethical guard
+        # [ATHENA-CUSTOM] Pre-query ethical guard (3-way: pass / guide / block)
         if _first_run:
             with ElysiaKeyManager(self.settings):
-                is_violation, violated_category, guard_reasoning = (
+                is_violation, requires_guidance, violated_category, guard_reasoning = (
                     await run_pre_query_check(
                         prompt=user_prompt,
                         history=self.tree_data.conversation_history,
@@ -1553,6 +1554,29 @@ class Tree:
                 self._update_conversation_history("assistant", refusal_text)
                 yield await self.returner(
                     Response(text=refusal_text),
+                    query_id=self.prompt_to_query_id[user_prompt],
+                )
+                yield await self.returner(
+                    Completed(rag_enabled=self.tree_data.rag_enabled),
+                    query_id=self.prompt_to_query_id[user_prompt],
+                )
+                if close_clients_after_completion and client_manager.is_client:
+                    await client_manager.close_clients()
+                return
+            elif requires_guidance:
+                with ElysiaKeyManager(self.settings):
+                    guidance_text = await generate_ethical_guidance(
+                        prompt=user_prompt,
+                        category=violated_category,
+                        reasoning=guard_reasoning,
+                        base_lm=self.base_lm,
+                        client_manager=client_manager,
+                        logger=self.settings.logger,
+                        ethical_guard_log=self.settings.ETHICAL_GUARD_LOG,
+                    )
+                self._update_conversation_history("assistant", guidance_text)
+                yield await self.returner(
+                    Response(text=guidance_text),
                     query_id=self.prompt_to_query_id[user_prompt],
                 )
                 yield await self.returner(
