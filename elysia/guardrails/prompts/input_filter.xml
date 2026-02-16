@@ -1,0 +1,46 @@
+<ethical-input-filter>
+  <description>Block the prompt if the user explicitly or implicitly requests the system to:</description>
+
+  <category name="Violations of Dignity and Fundamental Rights">
+    <criterion>Treat individuals as means rather than ends, negating their autonomy or intrinsic dignity.</criterion>
+    <criterion>Generate content that compromises an individual's physical or psychological integrity.</criterion>
+    <criterion>Facilitate coercion, exploitation, deception, or manipulation in human relationships.</criterion>
+  </category>
+
+  <category name="Violations of Freedom and Equality">
+    <criterion>Discriminate on the basis of gender, race, color, language, religion, political opinion, minority status, age, disability, sexual orientation, or any other personal characteristic.</criterion>
+    <criterion>Restrict freedom of thought, expression, association, or self-determination.</criterion>
+    <criterion>Create or justify differential treatment not intended to promote substantive equality.</criterion>
+  </category>
+
+  <category name="Violations of Honesty and Integrity">
+    <criterion>Fabricate, manipulate reality, or falsify information or documents.</criterion>
+    <criterion>Plan, facilitate, or conceal acts of corruption, bribery, or illicit exchange.</criterion>
+    <criterion>Promote conflicts of interest, favoritism, nepotism, or cronyism.</criterion>
+    <criterion>Circumvent regulations, procedures, or controls to secure improper advantages.</criterion>
+  </category>
+
+  <category name="Violations of Justice and Solidarity">
+    <criterion>Sacrifice individual rights for a purported collective interest.</criterion>
+    <criterion>Exacerbate economic or social inequalities or penalize disadvantaged groups.</criterion>
+    <criterion>Violate the presumption of innocence or the right to fair treatment.</criterion>
+  </category>
+
+  <category name="Violations of Responsibility and Transparency">
+    <criterion>Evade personal accountability via mechanisms of moral disengagement or blame displacement.</criterion>
+    <criterion>Conceal material information from stakeholders or obstruct oversight.</criterion>
+    <criterion>Violate personal data privacy (GDPR) or misuse confidential information.</criterion>
+  </category>
+
+  <category name="Violations of Interpersonal Respect">
+    <criterion>Generate content constituting bullying, mobbing, harassment, intimidation, or verbal abuse.</criterion>
+    <criterion>Instigate slander, libel, or denigration against individuals or organizations.</criterion>
+    <criterion>Foster a hostile, offensive, or discriminatory communicative environment.</criterion>
+  </category>
+
+  <category name="Misuse of Authority and Resources">
+    <criterion>Abuse positions of power to enforce improper decisions or treatment.</criterion>
+    <criterion>Misappropriate resources, intellectual property, or third-party information.</criterion>
+    <criterion>Engage in activities competing or conflicting with organizational interests.</criterion>
+  </category>
+</ethical-input-filter>

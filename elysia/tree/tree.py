@@ -29,6 +29,7 @@ from elysia.tree.util import (
 )
 from elysia.objects import (
     Completed,
+    Response,
     Result,
     Return,
     Update,
@@ -58,6 +59,11 @@ from elysia.config import (
 )
 from elysia.util.objects import Tracker, TrainingUpdate, TreeUpdate
 from elysia.util.parsing import remove_whitespace
+from elysia.guardrails.ethical_guard import (
+    run_pre_query_check,
+    run_post_response_check,
+    generate_ethical_refusal,
+)
 from elysia.util.collection import retrieve_all_collection_names
 
 
@@ -1332,6 +1338,30 @@ class Tree:
             error = True
 
         if isinstance(result, Text):
+            # [ATHENA-CUSTOM] Post-response ethical guard
+            with ElysiaKeyManager(self.settings):
+                post_violation, post_category, post_reasoning = (
+                    await run_post_response_check(
+                        response=result.text,
+                        prompt=self.user_prompt,
+                        base_lm=self.base_lm,
+                        logger=self.settings.logger,
+                        ethical_guard_log=self.settings.ETHICAL_GUARD_LOG,
+                    )
+                )
+            if post_violation:
+                with ElysiaKeyManager(self.settings):
+                    refusal_text = await generate_ethical_refusal(
+                        prompt=self.user_prompt,
+                        category=post_category,
+                        reasoning=post_reasoning,
+                        base_lm=self.base_lm,
+                        client_manager=self._post_guard_client_manager,
+                        logger=self.settings.logger,
+                        ethical_guard_log=self.settings.ETHICAL_GUARD_LOG,
+                    )
+                result = Response(text=refusal_text)
+
             self._update_conversation_history("assistant", result.text)
             if self.settings.LOGGING_LEVEL_INT <= 20:
                 print(
@@ -1520,6 +1550,45 @@ class Tree:
                         padding=(1, 1),
                     )
                 )
+
+        # Store client_manager for post-response guard access in _evaluate_result
+        self._post_guard_client_manager = client_manager
+
+        # [ATHENA-CUSTOM] Pre-query ethical guard
+        if _first_run:
+            with ElysiaKeyManager(self.settings):
+                is_violation, violated_category, guard_reasoning = (
+                    await run_pre_query_check(
+                        prompt=user_prompt,
+                        history=self.tree_data.conversation_history,
+                        base_lm=self.base_lm,
+                        logger=self.settings.logger,
+                        ethical_guard_log=self.settings.ETHICAL_GUARD_LOG,
+                    )
+                )
+            if is_violation:
+                with ElysiaKeyManager(self.settings):
+                    refusal_text = await generate_ethical_refusal(
+                        prompt=user_prompt,
+                        category=violated_category,
+                        reasoning=guard_reasoning,
+                        base_lm=self.base_lm,
+                        client_manager=client_manager,
+                        logger=self.settings.logger,
+                        ethical_guard_log=self.settings.ETHICAL_GUARD_LOG,
+                    )
+                self._update_conversation_history("assistant", refusal_text)
+                yield await self.returner(
+                    Response(text=refusal_text),
+                    query_id=self.prompt_to_query_id[user_prompt],
+                )
+                yield await self.returner(
+                    Completed(rag_enabled=self.tree_data.rag_enabled),
+                    query_id=self.prompt_to_query_id[user_prompt],
+                )
+                if close_clients_after_completion and client_manager.is_client:
+                    await client_manager.close_clients()
+                return
 
         # Start the tree at the root node
         if self.root is not None:

@@ -7,6 +7,7 @@ from weaviate.classes.query import Filter, Sort
 from weaviate.types import UUID
 
 from elysia.util.parsing import format_datetime
+from elysia.util.embedding import embed_query
 
 data_mapping = {
     "text": DataType.TEXT,
@@ -133,11 +134,21 @@ async def paginated_collection(
     if len(filters) == 0:
 
         if query != "":
-            response = await collection.query.bm25(
-                query=query,
-                limit=page_size,
-                offset=page_size * (page_number - 1),
-            )
+            try:
+                query_vector = embed_query(query)
+                response = await collection.query.hybrid(
+                    query=query,
+                    vector=query_vector,
+                    limit=page_size,
+                    offset=page_size * (page_number - 1),
+                    alpha=0.5,
+                )
+            except Exception:
+                response = await collection.query.bm25(
+                    query=query,
+                    limit=page_size,
+                    offset=page_size * (page_number - 1),
+                )
         elif sort_on is not None:
             response = await collection.query.fetch_objects(
                 sort=Sort.by_property(name=sort_on, ascending=ascending),
@@ -188,12 +199,23 @@ async def paginated_collection(
             raise ValueError(f"Invalid filter type: {filter_type}")
 
         if query != "":
-            response = await collection.query.bm25(
-                query=query,
-                filters=main_filter,
-                limit=page_size,
-                offset=page_size * (page_number - 1),
-            )
+            try:
+                query_vector = embed_query(query)
+                response = await collection.query.hybrid(
+                    query=query,
+                    vector=query_vector,
+                    filters=main_filter,
+                    limit=page_size,
+                    offset=page_size * (page_number - 1),
+                    alpha=0.5,
+                )
+            except Exception:
+                response = await collection.query.bm25(
+                    query=query,
+                    filters=main_filter,
+                    limit=page_size,
+                    offset=page_size * (page_number - 1),
+                )
         elif sort_on is not None:
             response = await collection.query.fetch_objects(
                 filters=main_filter,

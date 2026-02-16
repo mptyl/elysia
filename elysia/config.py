@@ -193,6 +193,9 @@ class Settings:
         self.LOGGING_LEVEL = "INFO"
         self.LOGGING_LEVEL_INT = 20
 
+        # Ethical guardrails
+        self.ETHICAL_GUARD_LOG = os.getenv("ETHICAL_GUARD_LOG", "false").lower() == "true"
+
         # Experimental features
         self.USE_FEEDBACK = False
         self.BASE_USE_REASONING = True

@@ -2,6 +2,19 @@ import dspy
 from typing import List
 from elysia.tools.text.objects import TextWithCitation
 
+# [ATHENA-CUSTOM] Ethical charter principles extracted as a constant.
+# These are embedded in prompt docstrings below and serve as fallback
+# if the external XML guardrail files are unavailable.
+ETHICAL_CHARTER_PROMPT = """\
+MANDATORY ETHICAL PRINCIPLES (UNI ETHICAL CHARTER) - YOU MUST STRICTLY FOLLOW THESE:
+1. DIGNITY: Always treat people as ends, never as means.
+   - FORBIDDEN: coercion, deception, manipulation, exploitation, violation of autonomy.
+2. FREEDOM: Protect freedom of thought, expression, and work-life balance.
+3. EQUALITY: Oppose all discrimination (gender, age, status, religion, etc.) and ensure equal dignity for all.
+4. SOLIDARITY: Orient every action toward the common good, mutual support, and social responsibility.
+5. CITIZENSHIP AND JUSTICE: Act with honesty, transparency, legality, and impartiality. Reject favoritism and arbitrariness.
+IMPERATIVE INSTRUCTION: If the user's request would lead you to violate any of these principles, REFUSE to fulfill it and explain the specific ethical violation."""
+
 
 class CitedSummarizingPrompt(dspy.Signature):
     """
@@ -11,16 +24,7 @@ class CitedSummarizingPrompt(dspy.Signature):
     Your summary should be parsing the retrieved objects, and summarising the information in them that is relevant to the user's prompt.
     For example, picking the most relevant information from the retrieved objects, and discussing it, repeating ONLY relevant information if necessary.
     You should provide useful analysis, new information via analysing the existing objects, and synthesising the information.
-    
-    MANDATORY ETHICAL PRINCIPLES (UNI ETHICAL CHARTER) - YOU MUST STRICTLY FOLLOW THESE:
-    1. DIGNITY: Always treat people as ends, never as means.
-       - FORBIDDEN: coercion, deception, manipulation, exploitation, violation of autonomy.
-    2. FREEDOM: Protect freedom of thought, expression, and work-life balance.
-    3. EQUALITY: Oppose all discrimination (gender, age, status, religion, etc.) and ensure equal dignity for all.
-    4. SOLIDARITY: Orient every action toward the common good, mutual support, and social responsibility.
-    5. CITIZENSHIP AND JUSTICE: Act with honesty, transparency, legality, and impartiality. Reject favoritism and arbitrariness.
-    IMPERATIVE INSTRUCTION: If the user's request would lead you to violate any of these principles, REFUSE to fulfill it and explain the specific ethical violation.
-    
+
     CRITICAL LANGUAGE RULE:
     - You MUST respond in the SAME LANGUAGE as the user's prompt.
     - NEVER switch languages unless explicitly asked.
@@ -70,16 +74,7 @@ class CitedSummarizingPrompt(dspy.Signature):
 class SummarizingPrompt(dspy.Signature):
     """
     Given a user_prompt, as well as a list of retrieved objects, summarize the information in the objects to answer the user's prompt.
-    
-    MANDATORY ETHICAL PRINCIPLES (UNI ETHICAL CHARTER) - YOU MUST STRICTLY FOLLOW THESE:
-    1. DIGNITY: Always treat people as ends, never as means.
-       - FORBIDDEN: coercion, deception, manipulation, exploitation, violation of autonomy.
-    2. FREEDOM: Protect freedom of thought, expression, and work-life balance.
-    3. EQUALITY: Oppose all discrimination (gender, age, status, religion, etc.) and ensure equal dignity for all.
-    4. SOLIDARITY: Orient every action toward the common good, mutual support, and social responsibility.
-    5. CITIZENSHIP AND JUSTICE: Act with honesty, transparency, legality, and impartiality. Reject favoritism and arbitrariness.
-    IMPERATIVE INSTRUCTION: If the user's request would lead you to violate any of these principles, REFUSE to fulfill it and explain the specific ethical violation.
-    
+
     CRITICAL LANGUAGE RULE:
     - You MUST respond in the SAME LANGUAGE as the user's prompt.
     - NEVER switch languages unless explicitly asked.
@@ -113,16 +108,7 @@ class TextResponsePrompt(dspy.Signature):
     You are a helpful assistant, designed to be used in a chat interface and respond to user's prompts in a helpful, friendly, and polite manner.
     Given a user_prompt, as well as a list of retrieved objects, respond to the user's prompt.
     Your response should be informal, polite, and assistant-like.
-    
-    MANDATORY ETHICAL PRINCIPLES (UNI ETHICAL CHARTER) - YOU MUST STRICTLY FOLLOW THESE:
-    1. DIGNITY: Always treat people as ends, never as means.
-       - FORBIDDEN: coercion, deception, manipulation, exploitation, violation of autonomy.
-    2. FREEDOM: Protect freedom of thought, expression, and work-life balance.
-    3. EQUALITY: Oppose all discrimination (gender, age, status, religion, etc.) and ensure equal dignity for all.
-    4. SOLIDARITY: Orient every action toward the common good, mutual support, and social responsibility.
-    5. CITIZENSHIP AND JUSTICE: Act with honesty, transparency, legality, and impartiality. Reject favoritism and arbitrariness.
-    IMPERATIVE INSTRUCTION: If the user's request would lead you to violate any of these principles, REFUSE to fulfill it and explain the specific ethical violation.
-    
+
     CRITICAL LANGUAGE RULE:
     - You MUST respond in the SAME LANGUAGE as the user's prompt.
     - If the user writes in Italian, respond in Italian.

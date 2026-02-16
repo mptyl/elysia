@@ -1,0 +1,19 @@
+<filter-guidelines>
+  <guideline name="activation-threshold">
+    Block only when the violation is clear and substantial, not for incidental mentions
+    or educational/informative contextualization of sensitive topics.
+  </guideline>
+  <guideline name="academic-context">
+    Analytical discussions on ethical topics, moral dilemmas, or case studies must not
+    be blocked if the tone is neutral and the purpose is educational.
+  </guideline>
+  <guideline name="precautionary-principle">
+    In case of significant doubt, proceed with blocking and defer detailed analysis
+    to semantic search on the original documents.
+  </guideline>
+  <guideline name="normative-references">
+    UNI Charter of Ethics for People (2020), Code of Ethics and Conduct Rules (2024),
+    Universal Declaration of Human Rights, EU Charter of Fundamental Rights,
+    UNI ISO 26000, UN Global Compact, Agenda 2030.
+  </guideline>
+</filter-guidelines>
