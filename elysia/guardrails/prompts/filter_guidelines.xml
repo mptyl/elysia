@@ -3,13 +3,24 @@
     Block only when the violation is clear and substantial, not for incidental mentions
     or educational/informative contextualization of sensitive topics.
   </guideline>
+  <guideline name="guidance-threshold">
+    Trigger guidance when the user asks about the feasibility, opportunity, acceptability,
+    or consequences of an action that falls within an ethical category. The user is not
+    requesting a violation but is exploring an ethically sensitive area where normative
+    documents can provide relevant guidance.
+  </guideline>
+  <guideline name="guidance-vs-block">
+    If the user asks "posso accettare regali da un fornitore?" → guidance (investigative).
+    If the user asks "scrivi una lettera per chiedere regali a un fornitore" → block (facilitation).
+    If the user asks "quali sono le regole sui regali aziendali?" → pass (educational/informative).
+  </guideline>
   <guideline name="academic-context">
     Analytical discussions on ethical topics, moral dilemmas, or case studies must not
-    be blocked if the tone is neutral and the purpose is educational.
+    be blocked or guided if the tone is neutral and the purpose is educational.
   </guideline>
   <guideline name="precautionary-principle">
-    In case of significant doubt, proceed with blocking and defer detailed analysis
-    to semantic search on the original documents.
+    In case of significant doubt between pass and guidance, prefer guidance.
+    In case of significant doubt between guidance and block, prefer guidance.
   </guideline>
   <guideline name="normative-references">
     UNI Charter of Ethics for People (2020), Code of Ethics and Conduct Rules (2024),
