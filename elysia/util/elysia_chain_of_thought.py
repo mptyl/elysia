@@ -69,6 +69,7 @@ class ElysiaChainOfThought(Module):
         environment: bool = False,
         collection_schemas: bool = False,
         tasks_completed: bool = False,
+        profile_context: bool = False,
         collection_names: list[str] = [],
         **config,
     ):
@@ -102,6 +103,10 @@ class ElysiaChainOfThought(Module):
                 as well as to stop it from repeating actions.
                 Other information is included in the `tasks_completed` field that format outputs from previous tasks.
                 This is useful for continuing a decision logic across tasks, or to reinforce key information.
+            profile_context (bool): Whether to include the user profile system prompt.
+                If True, the module will include the rendered profile-based system prompt as context.
+                This tailors the LLM response style, detail level, tone, and focus area
+                based on the user's Supabase profile and role-specific instructions.
             collection_names (list[str]): A list of collection names to include in the prompt.
                 If provided, this will modify the collection schema input to only include the collections in this list.
                 This is useful if you only want to include certain collections in the prompt.
@@ -121,6 +126,7 @@ class ElysiaChainOfThought(Module):
         self.environment = environment
         self.collection_schemas = collection_schemas
         self.tasks_completed = tasks_completed
+        self.profile_context = profile_context
         self.collection_names = collection_names
         self.reasoning = reasoning
         self.impossible = impossible
@@ -254,6 +260,21 @@ class ElysiaChainOfThought(Module):
                 name="tasks_completed", field=tasks_completed_field, type_=str
             )
 
+        # -- Profile Context Input --
+        if profile_context:
+            profile_context_desc = (
+                "User profile context with communication preferences and role-specific instructions. "
+                "Use this to tailor your response style, detail level, tone, and focus area to the user's profile. "
+                "Follow the guidelines specified in the profile for detail-level, tone, language, and focus."
+            )
+            profile_context_prefix = "${profile_context}"
+            profile_context_field: str = dspy.InputField(
+                prefix=profile_context_prefix, desc=profile_context_desc
+            )
+            extended_signature = extended_signature.append(
+                name="profile_context", field=profile_context_field, type_=str
+            )
+
         # -- Impossible Field --
         if impossible:
             impossible_desc = (
@@ -339,6 +360,9 @@ class ElysiaChainOfThought(Module):
 
         if self.tasks_completed:
             kwargs["tasks_completed"] = self.tree_data.tasks_completed_string()
+
+        if self.profile_context:
+            kwargs["profile_context"] = self.tree_data.profile_system_prompt
 
         return kwargs
 

@@ -196,6 +196,10 @@ class Settings:
         # Ethical guardrails
         self.ETHICAL_GUARD_LOG = os.getenv("ETHICAL_GUARD_LOG", "false").lower() == "true"
 
+        # [ATHENA-CUSTOM] Supabase connection (for user profile prompt in DirectAnswer)
+        self.SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+        self.SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+
         # Experimental features
         self.USE_FEEDBACK = False
         self.BASE_USE_REASONING = True

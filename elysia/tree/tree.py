@@ -159,6 +159,7 @@ class Tree:
             recursion_limit=5,
             settings=self.settings,
         )
+        self.tree_data.user_id = self.user_id
 
         # initialise the timers
         self.tracker = Tracker(

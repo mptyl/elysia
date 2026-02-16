@@ -631,6 +631,9 @@ class TreeData:
 
         self.rag_enabled = rag_enabled
 
+        # -- Profile System Prompt (populated by DirectAnswer) --
+        self.profile_system_prompt: str = ""
+
         # -- Atlas --
         self.atlas = atlas
 
