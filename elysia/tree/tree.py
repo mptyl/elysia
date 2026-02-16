@@ -61,6 +61,7 @@ from elysia.util.objects import Tracker, TrainingUpdate, TreeUpdate
 from elysia.util.parsing import remove_whitespace
 from elysia.guardrails.ethical_guard import (
     run_pre_query_check,
+    generate_ethical_refusal,
 )
 from elysia.util.collection import retrieve_all_collection_names
 

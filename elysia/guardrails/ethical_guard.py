@@ -89,6 +89,23 @@ class PreQueryEthicalCheck(dspy.Signature):
     )
 
 
+class EthicalRefusalGeneration(dspy.Signature):
+    """Generate a polite, helpful refusal message for a user prompt that violates ethical guidelines.
+    The response should acknowledge the user's question, briefly explain why it cannot be answered,
+    and suggest a constructive alternative if possible. Respond in the same language as the user prompt."""
+
+    user_prompt: str = dspy.InputField(desc="The user's original prompt")
+    violated_category: str = dspy.InputField(
+        desc="The ethical category that was violated"
+    )
+    reasoning: str = dspy.InputField(
+        desc="Why this is considered a violation"
+    )
+
+    refusal_message: str = dspy.OutputField(
+        desc="A polite, constructive refusal message in the same language as the user prompt"
+    )
+
 
 # --- Core guard functions ---
 
@@ -151,3 +168,43 @@ async def run_pre_query_check(
             logger.info("[ETHICAL-GUARD] PRE-QUERY: violation=False")
 
     return is_violation, violated_category, reasoning
+
+
+async def generate_ethical_refusal(
+    prompt: str,
+    category: str,
+    reasoning: str,
+    base_lm: dspy.LM,
+    client_manager=None,
+    logger: logging.Logger | None = None,
+    ethical_guard_log: bool = False,
+) -> str:
+    """
+    Generate a polite refusal message for a prompt that violated ethical guidelines.
+
+    Returns:
+        A user-friendly refusal message string.
+    """
+    try:
+        with dspy.context(lm=base_lm):
+            result = dspy.Predict(EthicalRefusalGeneration)(
+                user_prompt=prompt,
+                violated_category=category,
+                reasoning=reasoning,
+            )
+        refusal_text = result.refusal_message
+
+        if ethical_guard_log and logger:
+            logger.info(
+                f"[ETHICAL-GUARD] REFUSAL: generated for category=\"{category}\""
+            )
+
+        return refusal_text
+
+    except Exception as e:
+        if logger:
+            logger.error(f"[ETHICAL-GUARD] Refusal generation failed: {e}")
+        return (
+            "Mi dispiace, non posso rispondere a questa richiesta in quanto potrebbe "
+            "violare le linee guida etiche del sistema. Posso aiutarti con qualcos'altro?"
+        )

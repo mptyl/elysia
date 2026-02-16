@@ -374,11 +374,11 @@ class DecisionNode:
         compiled_executor = optimizer.compile(decision_executor, trainset=examples)
         return compiled_executor
 
-    def _tool_assertion(self, kwargs, pred):
+    def _tool_assertion(self, available_tools: list[str], kwargs, pred):
         return (
-            pred.function_name in self.options,
+            pred.function_name in available_tools,
             f"You picked the action `{pred.function_name}` - that is not in `available_actions`! "
-            f"Your output MUST be one of the following: {list(self.options.keys())}",
+            f"Your output MUST be one of the following: {available_tools}",
         )
 
     async def __call__(
@@ -426,7 +426,7 @@ class DecisionNode:
 
             decision_executor = AssertedModule(
                 decision_module,
-                assertion=self._tool_assertion,
+                assertion=lambda kwargs, pred: self._tool_assertion(available_tools, kwargs, pred),
                 max_tries=2,
             )
 
