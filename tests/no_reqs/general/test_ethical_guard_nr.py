@@ -34,3 +34,23 @@ def test_generate_ethical_guidance_is_async_callable():
 def test_run_pre_query_check_is_async_callable():
     """run_pre_query_check must be an async function."""
     assert asyncio.iscoroutinefunction(run_pre_query_check)
+
+
+@pytest.mark.asyncio
+async def test_run_pre_query_check_returns_4_tuple():
+    """run_pre_query_check must return a 4-tuple with the DummyAdapter defaults."""
+    from dspy.utils import DummyLM
+
+    dummy_lm = DummyLM([{}])
+
+    result = await run_pre_query_check(
+        prompt="posso accettare regali di natale da un fornitore?",
+        history=[],
+        base_lm=dummy_lm,
+    )
+
+    assert len(result) == 4
+    is_violation, requires_guidance, category, reasoning = result
+    # DummyAdapter returns False for bool fields by default
+    assert isinstance(is_violation, bool)
+    assert isinstance(requires_guidance, bool)

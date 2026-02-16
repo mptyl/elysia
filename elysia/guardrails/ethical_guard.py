@@ -171,6 +171,76 @@ class EthicalGuidanceGenerator(dspy.Signature):
     )
 
 
+# --- RAG helper ---
+
+
+async def _retrieve_normative_context(
+    prompt: str,
+    category: str,
+    reasoning: str,
+    client_manager,
+    logger: logging.Logger | None = None,
+    ethical_guard_log: bool = False,
+    log_label: str = "RAG",
+) -> str:
+    """
+    Query UNIInternalDocs Weaviate collection for normative context.
+    Shared by both refusal and guidance generators.
+
+    Returns:
+        Formatted RAG context string, or empty string if unavailable.
+    """
+    if client_manager is None or not client_manager.is_client:
+        return ""
+
+    rag_context = ""
+    rag_start = time.time()
+    try:
+        async with client_manager.connect_to_async_client() as client:
+            if await client.collections.exists(RAG_COLLECTION_NAME):
+                collection = client.collections.get(RAG_COLLECTION_NAME)
+                rag_query = f"{category} {reasoning} {prompt}"
+                try:
+                    query_vector = embed_query(rag_query)
+                    results = await collection.query.hybrid(
+                        query=rag_query,
+                        vector=query_vector,
+                        limit=5,
+                        alpha=0.5,
+                    )
+                except Exception:
+                    results = await collection.query.bm25(
+                        query=rag_query,
+                        limit=5,
+                    )
+                if results.objects:
+                    context_parts = []
+                    for obj in results.objects:
+                        props = obj.properties
+                        filename = props.get("filename", "documento sconosciuto")
+                        content = props.get("content", "")
+                        chunk_id = props.get("chunk_id", "")
+                        if content:
+                            entry = (
+                                f"[Documento: {filename}, sezione {chunk_id}]\n"
+                                f"{content}"
+                            )
+                            context_parts.append(entry)
+                    rag_context = "\n\n---\n\n".join(context_parts)
+    except Exception as e:
+        if logger:
+            logger.warning(f"[ETHICAL-GUARD] {log_label} failed: {e}")
+
+    rag_time_ms = int((time.time() - rag_start) * 1000)
+    if ethical_guard_log and logger:
+        logger.info(
+            f"[ETHICAL-GUARD] {log_label}: rag_time_ms={rag_time_ms}, "
+            f"documents_retrieved={len(rag_context.split('---')) if rag_context else 0}"
+        )
+
+    return rag_context
+
+
 # --- Core guard functions ---
 
 
@@ -260,57 +330,11 @@ async def generate_ethical_refusal(
     Returns:
         The refusal message string.
     """
-    rag_context = ""
-
-    # RAG escalation: query UNIInternalDocs for normative context
-    if client_manager is not None and client_manager.is_client:
-        rag_start = time.time()
-        try:
-            async with client_manager.connect_to_async_client() as client:
-                if await client.collections.exists(RAG_COLLECTION_NAME):
-                    collection = client.collections.get(RAG_COLLECTION_NAME)
-                    # Include user prompt for better keyword matching
-                    # (documents are often in Italian, categories in English)
-                    rag_query = f"{category} {reasoning} {prompt}"
-                    try:
-                        query_vector = embed_query(rag_query)
-                        results = await collection.query.hybrid(
-                            query=rag_query,
-                            vector=query_vector,
-                            limit=5,
-                            alpha=0.5,
-                        )
-                    except Exception:
-                        results = await collection.query.bm25(
-                            query=rag_query,
-                            limit=5,
-                        )
-                    if results.objects:
-                        context_parts = []
-                        for obj in results.objects:
-                            props = obj.properties
-                            filename = props.get("filename", "documento sconosciuto")
-                            content = props.get("content", "")
-                            chunk_id = props.get("chunk_id", "")
-                            if content:
-                                entry = (
-                                    f"[Documento: {filename}, sezione {chunk_id}]\n"
-                                    f"{content}"
-                                )
-                                context_parts.append(entry)
-                        rag_context = "\n\n---\n\n".join(context_parts)
-        except Exception as e:
-            if logger:
-                logger.warning(
-                    f"[ETHICAL-GUARD] RAG-ESCALATION failed: {e}"
-                )
-
-        rag_time_ms = int((time.time() - rag_start) * 1000)
-        if ethical_guard_log and logger:
-            logger.info(
-                f"[ETHICAL-GUARD] RAG-ESCALATION: rag_time_ms={rag_time_ms}, "
-                f"documents_retrieved={len(rag_context.split('---')) if rag_context else 0}"
-            )
+    rag_context = await _retrieve_normative_context(
+        prompt, category, reasoning, client_manager,
+        logger=logger, ethical_guard_log=ethical_guard_log,
+        log_label="RAG-ESCALATION",
+    )
 
     # Generate the refusal message
     try:
@@ -355,53 +379,11 @@ async def generate_ethical_guidance(
     Returns:
         The guidance message string.
     """
-    rag_context = ""
-
-    # RAG: query UNIInternalDocs for normative context (same pattern as refusal)
-    if client_manager is not None and client_manager.is_client:
-        rag_start = time.time()
-        try:
-            async with client_manager.connect_to_async_client() as client:
-                if await client.collections.exists(RAG_COLLECTION_NAME):
-                    collection = client.collections.get(RAG_COLLECTION_NAME)
-                    rag_query = f"{category} {reasoning} {prompt}"
-                    try:
-                        query_vector = embed_query(rag_query)
-                        results = await collection.query.hybrid(
-                            query=rag_query,
-                            vector=query_vector,
-                            limit=5,
-                            alpha=0.5,
-                        )
-                    except Exception:
-                        results = await collection.query.bm25(
-                            query=rag_query,
-                            limit=5,
-                        )
-                    if results.objects:
-                        context_parts = []
-                        for obj in results.objects:
-                            props = obj.properties
-                            filename = props.get("filename", "documento sconosciuto")
-                            content = props.get("content", "")
-                            chunk_id = props.get("chunk_id", "")
-                            if content:
-                                entry = (
-                                    f"[Documento: {filename}, sezione {chunk_id}]\n"
-                                    f"{content}"
-                                )
-                                context_parts.append(entry)
-                        rag_context = "\n\n---\n\n".join(context_parts)
-        except Exception as e:
-            if logger:
-                logger.warning(f"[ETHICAL-GUARD] RAG-GUIDANCE failed: {e}")
-
-        rag_time_ms = int((time.time() - rag_start) * 1000)
-        if ethical_guard_log and logger:
-            logger.info(
-                f"[ETHICAL-GUARD] RAG-GUIDANCE: rag_time_ms={rag_time_ms}, "
-                f"documents_retrieved={len(rag_context.split('---')) if rag_context else 0}"
-            )
+    rag_context = await _retrieve_normative_context(
+        prompt, category, reasoning, client_manager,
+        logger=logger, ethical_guard_log=ethical_guard_log,
+        log_label="RAG-GUIDANCE",
+    )
 
     # Generate the guidance message
     try:
