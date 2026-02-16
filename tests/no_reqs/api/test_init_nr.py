@@ -89,4 +89,4 @@ class TestTree:
         )
 
         response = read_response(out)
-        assert response["error"] != ""  # should error as user doesn't exist
+        assert response["error"] == ""  # new user is created on the fly
