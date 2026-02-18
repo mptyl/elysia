@@ -1,0 +1,29 @@
+<!-- 
+  Athena Proposal 1 v8: 'A inside U' + Multi-Node Spark
+  - 'U' as the bowl/container.
+  - 'A' nested inside.
+  - Enhanced Spark with surrounding nodes in top-right.
+-->
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- The 'U' Container (Institutional Base) -->
+  <path d="M40 70 V130 C40 163 67 190 100 190 C133 190 160 163 160 130 V70" stroke="#26547B" stroke-width="14" stroke-linecap="round"/>
+  
+  <!-- The 'A' Core (Nested inside U) -->
+  <path d="M65 140 L100 50 L135 140" stroke="#26547B" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M80 110 H120" stroke="#26547B" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Enhanced AI Spark (Top Right) -->
+  <g transform="translate(155, 35)">
+    <!-- Main Spark Body -->
+    <path d="M15 0 C15 8.28427 8.28427 15 0 15 C8.28427 15 15 21.7157 15 30 C15 21.7157 21.7157 15 30 15 C21.7157 15 15 8.28427 15 0 Z" fill="#4FD1C5" />
+    
+    <!-- Extra Light Nodes (Puntini di luce) -->
+    <circle cx="15" cy="-8" r="2.5" fill="#26547B" />
+    <circle cx="33" cy="15" r="2" fill="#4FD1C5" />
+    <circle cx="15" cy="38" r="1.5" fill="#26547B" />
+    <circle cx="-5" cy="15" r="2" fill="#4FD1C5" />
+    <!-- Secondary tiny sparks -->
+    <circle cx="3" cy="3" r="1" fill="#4FD1C5" />
+    <circle cx="27" cy="3" r="1.5" fill="#4FD1C5" />
+  </g>
+</svg>

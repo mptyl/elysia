@@ -1,0 +1,17 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Globe Shape -->
+  <circle cx="100" cy="100" r="85" stroke="white" stroke-width="2" stroke-dasharray="4 4" opacity="0.5"/>
+  
+  <!-- Stylized 'A' + RAG Flow -->
+  <path d="M60 150 L100 50 L140 150" stroke="white" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M75 115 H125" stroke="#4FD1C5" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Flow Lines (RAG) -->
+  <path d="M100 50 C130 50 160 80 160 110 C160 140 130 170 100 170" stroke="#4FD1C5" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="160" cy="110" r="5" fill="#4FD1C5">
+    <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="100" cy="170" r="5" fill="#4FD1C5">
+    <animate attributeName="opacity" values="1;0.5;1" dur="2s" begin="1s" repeatCount="indefinite" />
+  </circle>
+</svg>

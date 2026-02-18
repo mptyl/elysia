@@ -1,0 +1,13 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Globe Shape -->
+  <circle cx="100" cy="100" r="85" stroke="#26547B" stroke-width="2" stroke-dasharray="4 4"/>
+  
+  <!-- Stylized 'A' + RAG Flow -->
+  <path d="M60 150 L100 50 L140 150" stroke="#26547B" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M75 115 H125" stroke="#26547B" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Flow Lines (RAG) -->
+  <path d="M100 50 C130 50 160 80 160 110 C160 140 130 170 100 170" stroke="#26547B" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+  <circle cx="160" cy="110" r="4" fill="#26547B"/>
+  <circle cx="100" cy="170" r="4" fill="#26547B"/>
+</svg>

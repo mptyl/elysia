@@ -1,0 +1,36 @@
+<!-- 
+  Athena Proposal 1 v8: 'A inside U' + Multi-Node Spark (Dark Mode)
+-->
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- The 'U' Container -->
+  <path d="M40 70 V130 C40 163 67 190 100 190 C133 190 160 163 160 130 V70" stroke="white" stroke-width="14" stroke-linecap="round"/>
+  
+  <!-- The 'A' Core -->
+  <path d="M65 140 L100 50 L135 140" stroke="white" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M80 110 H120" stroke="#4FD1C5" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Enhanced Glowing AI Spark (Top Right) -->
+  <g transform="translate(155, 35)">
+    <!-- Glow Effect -->
+    <circle cx="15" cy="15" r="20" fill="#4FD1C5" opacity="0.2">
+      <animate attributeName="opacity" values="0.2;0.4;0.2" dur="2s" repeatCount="indefinite" />
+    </circle>
+    
+    <!-- Main Spark Body -->
+    <path d="M15 0 C15 8.28427 8.28427 15 0 15 C8.28427 15 15 21.7157 15 30 C15 21.7157 21.7157 15 30 15 C21.7157 15 15 8.28427 15 0 Z" fill="#4FD1C5" />
+    
+    <!-- Extra Light Nodes (Glowing) -->
+    <circle cx="15" cy="-8" r="2.5" fill="white" />
+    <circle cx="33" cy="15" r="2" fill="#4FD1C5" />
+    <circle cx="15" cy="38" r="1.5" fill="white" />
+    <circle cx="-5" cy="15" r="2" fill="#4FD1C5" />
+    
+    <!-- Pulse Animation Nodes -->
+    <circle cx="3" cy="3" r="1.5" fill="#4FD1C5">
+       <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="27" cy="27" r="1.5" fill="white">
+       <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" />
+    </circle>
+  </g>
+</svg>

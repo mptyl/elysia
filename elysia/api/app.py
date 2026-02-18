@@ -22,6 +22,7 @@ from elysia.api.routes import (
     utils,
     tools,
     db,
+    static_frontend,
 )
 from elysia.api.services.user import UserManager
 from elysia.api.utils.resources import print_resources
@@ -91,6 +92,9 @@ app.include_router(utils.router, prefix="/util", tags=["utilities"])
 app.include_router(tools.router, prefix="/tools", tags=["tools"])
 app.include_router(db.router, prefix="/db", tags=["db"])
 
+# Static frontend support: proxies (/supabase, /entra, /common) + auth routes
+app.include_router(static_frontend.router, tags=["static-frontend"])
+
 
 # Health check endpoint (kept in main app.py due to its simplicity)
 @app.get("/api/health", tags=["health"])
@@ -121,3 +125,26 @@ async def serve_frontend():
         return FileResponse(os.path.join(BASE_DIR, "static/index.html"))
     else:
         return None
+
+
+@app.get("/{full_path:path}")
+async def serve_spa_fallback(full_path: str):
+    """Catch-all: serve static HTML pages or fall back to index.html for SPA routing."""
+    static_dir = os.path.join(BASE_DIR, "static")
+    # Try exact HTML file (e.g., /login → static/login.html)
+    html_file = os.path.join(static_dir, f"{full_path}.html")
+    if os.path.isfile(html_file):
+        return FileResponse(html_file)
+    # Try as directory with index.html
+    index_file = os.path.join(static_dir, full_path, "index.html")
+    if os.path.isfile(index_file):
+        return FileResponse(index_file)
+    # Try exact file (e.g., /icon.svg)
+    exact_file = os.path.join(static_dir, full_path)
+    if os.path.isfile(exact_file):
+        return FileResponse(exact_file)
+    # SPA fallback
+    fallback = os.path.join(static_dir, "index.html")
+    if os.path.isfile(fallback):
+        return FileResponse(fallback)
+    return None
