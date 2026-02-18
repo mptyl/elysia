@@ -262,8 +262,8 @@ async def auth_session(request: Request):
     user_data = verify_resp.json()
 
     # Decode JWT to extract expiry (exp claim)
-    expires_at = 0
     expires_in = 3600
+    expires_at = int(time.time()) + expires_in  # safe fallback
     try:
         token_parts = access_token.split(".")
         if len(token_parts) >= 2:
@@ -275,47 +275,20 @@ async def auth_session(request: Request):
     except Exception:
         pass
 
-    # Build cookie value matching @supabase/ssr session format.
-    # The Supabase JS client expects the full session object including the user.
-    cookie_data = json.dumps({
+    # Build the full session object
+    session = {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
         "expires_in": expires_in,
         "expires_at": expires_at,
         "user": user_data,
-    })
+    }
 
-    response = JSONResponse({"ok": True})
-
-    # URL-encode the cookie value so Starlette passes it through verbatim.
-    # Without this, Python's http.cookies quotes the JSON (escaping commas
-    # as \054 and wrapping in double-quotes), which @supabase/ssr cannot parse.
-    encoded_cookie = urllib.parse.quote(cookie_data)
-
-    # Supabase SSR cookie chunking: for large cookies, split into chunks.
-    # Cookie name pattern: {name}.0, {name}.1, etc. for chunks, or just {name} if small.
-    max_chunk = 3072  # leave room for cookie metadata
-    if len(encoded_cookie) <= max_chunk:
-        response.set_cookie(
-            key=AUTH_COOKIE_NAME,
-            value=encoded_cookie,
-            path="/",
-            httponly=False,
-            samesite="lax",
-        )
-    else:
-        chunks = [encoded_cookie[i : i + max_chunk] for i in range(0, len(encoded_cookie), max_chunk)]
-        for idx, chunk in enumerate(chunks):
-            response.set_cookie(
-                key=f"{AUTH_COOKIE_NAME}.{idx}",
-                value=chunk,
-                path="/",
-                httponly=False,
-                samesite="lax",
-            )
-
-    return response
+    # Return session in the body so the bootstrap HTML can set the cookie
+    # client-side (avoids Python ↔ JS cookie format mismatches).
+    # The bootstrap HTML handles base64url encoding and document.cookie setting.
+    return JSONResponse({"ok": True, "session": session})
 
 
 # ---------------------------------------------------------------------------
@@ -372,21 +345,23 @@ async def auth_callback(request: Request):
 
 def _session_bootstrap_html(origin: str, tokens: dict | None) -> HTMLResponse:
     """
-    Serve an HTML page that sets the auth session and redirects home.
+    Serve an HTML page that sets the auth cookie client-side and redirects home.
 
-    For PKCE flow (tokens from server): POST tokens to /api/auth/session
-    which writes the cookie with the full session object (including user).
+    The cookie is set via document.cookie in the browser, using the exact same
+    base64url encoding that @supabase/ssr expects. This avoids any format
+    mismatches from server-side cookie setting.
 
-    For implicit flow (tokens in hash fragment): extract tokens from hash,
-    POST to /api/auth/session, then redirect home.
+    For PKCE flow (tokens from server): the full session (with user) is already
+    available — set cookie directly and redirect.
 
-    This mirrors the Next.js auth callback behaviour so that the
-    Supabase JS client (createBrowserClient) recognises the cookie.
+    For implicit flow (tokens in hash fragment): extract tokens, POST to
+    /api/auth/session to get the full session (with user), then set cookie.
     """
     home_url = f"{origin}/"
     login_url = f"{origin}/login"
     session_url = f"{origin}/api/auth/session"
     sync_profile_url = f"{origin}/api/auth/sync-profile"
+    cookie_name = AUTH_COOKIE_NAME
     tokens_json = json.dumps(tokens) if tokens else "null"
 
     html = f"""<!doctype html>
@@ -403,7 +378,45 @@ def _session_bootstrap_html(origin: str, tokens: dict | None) -> HTMLResponse:
       var loginUrl = {json.dumps(login_url)};
       var sessionUrl = {json.dumps(session_url)};
       var syncProfileUrl = {json.dumps(sync_profile_url)};
+      var cookieName = {json.dumps(cookie_name)};
       var tokens = {tokens_json};
+
+      // --- Base64url encoder (matches @supabase/ssr stringToBase64URL) ---
+      function toBase64URL(str) {{
+        // UTF-8 encode then base64url (no padding)
+        var utf8 = unescape(encodeURIComponent(str));
+        var b64 = btoa(utf8);
+        return b64.replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+      }}
+
+      // --- Set the auth cookie via document.cookie ---
+      function setAuthCookie(session) {{
+        var json = JSON.stringify(session);
+        var encoded = "base64-" + toBase64URL(json);
+
+        // Clear any stale cookies (base + chunks)
+        var expires = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = cookieName + "=; path=/; " + expires;
+        for (var i = 0; i < 10; i++) {{
+          document.cookie = cookieName + "." + i + "=; path=/; " + expires;
+        }}
+
+        // Chunk if needed (max ~3072 chars per cookie)
+        var maxChunk = 3072;
+        if (encoded.length <= maxChunk) {{
+          document.cookie = cookieName + "=" + encoded + "; path=/; samesite=lax";
+        }} else {{
+          for (var idx = 0; idx * maxChunk < encoded.length; idx++) {{
+            var chunk = encoded.substring(idx * maxChunk, (idx + 1) * maxChunk);
+            document.cookie = cookieName + "." + idx + "=" + chunk + "; path=/; samesite=lax";
+          }}
+        }}
+
+        console.log("[AUTH] Cookie set, encoded length:", encoded.length,
+                    "chunked:", encoded.length > maxChunk);
+      }}
+
+      // --- Main flow ---
 
       // If no tokens from PKCE, check hash fragment (implicit flow)
       if (!tokens) {{
@@ -419,31 +432,53 @@ def _session_bootstrap_html(origin: str, tokens: dict | None) -> HTMLResponse:
       }}
 
       if (!tokens || !tokens.access_token || !tokens.refresh_token) {{
+        console.error("[AUTH] No tokens available, redirecting to login");
         window.location.replace(loginUrl);
         return;
       }}
 
-      // POST tokens to /api/auth/session so the server writes
-      // the cookie in the full format @supabase/ssr expects.
-      fetch(sessionUrl, {{
-        method: "POST",
-        headers: {{ "Content-Type": "application/json" }},
-        credentials: "include",
-        body: JSON.stringify({{
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token
+      // Check if we have a full session (PKCE gives us user, expires_at, etc.)
+      if (tokens.user && tokens.expires_at) {{
+        // PKCE flow: full session available — set cookie directly
+        setAuthCookie(tokens);
+        console.log("[AUTH] PKCE session cookie set, syncing profile...");
+
+        // Best-effort profile sync, then redirect
+        fetch(syncProfileUrl, {{ method: "POST", credentials: "include" }})
+          .finally(function() {{
+            console.log("[AUTH] Redirecting home");
+            window.location.replace(homeUrl);
+          }});
+      }} else {{
+        // Implicit flow: need server to verify tokens and build full session
+        fetch(sessionUrl, {{
+          method: "POST",
+          headers: {{ "Content-Type": "application/json" }},
+          credentials: "include",
+          body: JSON.stringify({{
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token
+          }})
         }})
-      }})
-        .then(function(res) {{
-          if (!res.ok) throw new Error("Session exchange failed");
-          return fetch(syncProfileUrl, {{ method: "POST", credentials: "include" }});
-        }})
-        .then(function() {{
-          window.location.replace(homeUrl);
-        }})
-        .catch(function() {{
-          window.location.replace(loginUrl);
-        }});
+          .then(function(res) {{
+            if (!res.ok) throw new Error("Session exchange failed: " + res.status);
+            return res.json();
+          }})
+          .then(function(data) {{
+            if (data.session) {{
+              // Server returned full session — set cookie client-side
+              setAuthCookie(data.session);
+            }}
+            return fetch(syncProfileUrl, {{ method: "POST", credentials: "include" }});
+          }})
+          .then(function() {{
+            window.location.replace(homeUrl);
+          }})
+          .catch(function(err) {{
+            console.error("[AUTH] Failed:", err);
+            window.location.replace(loginUrl);
+          }});
+      }}
     }})();
   </script>
 </body>
@@ -581,25 +616,49 @@ async def auth_sync_profile(request: Request):
 # ---------------------------------------------------------------------------
 
 def _read_auth_cookie(request: Request) -> Optional[dict]:
-    """Read and parse the Supabase auth cookie (handles chunked cookies)."""
+    """Read and parse the Supabase auth cookie (handles chunked and base64url cookies)."""
     raw = request.cookies.get(AUTH_COOKIE_NAME)
-    if raw:
+
+    # Try chunked cookies if no base cookie
+    if not raw:
+        chunks = []
+        for i in range(10):
+            chunk = request.cookies.get(f"{AUTH_COOKIE_NAME}.{i}")
+            if chunk is None:
+                break
+            chunks.append(chunk)
+        if chunks:
+            raw = "".join(chunks)
+
+    if not raw:
+        return None
+
+    return _decode_cookie_value(raw)
+
+
+def _decode_cookie_value(raw: str) -> Optional[dict]:
+    """Decode a cookie value that may be base64url-encoded, URL-encoded, or plain JSON."""
+    # base64url format (@supabase/ssr v0.8+ default)
+    if raw.startswith("base64-"):
         try:
-            return json.loads(raw)
-        except (json.JSONDecodeError, ValueError):
+            b64 = raw[7:]
+            # Re-add padding if stripped (Python's b64decode requires it)
+            b64 += "=" * (-len(b64) % 4)
+            decoded = base64.urlsafe_b64decode(b64).decode("utf-8")
+            return json.loads(decoded)
+        except Exception:
             pass
 
-    # Try chunked cookies
-    chunks = []
-    for i in range(10):
-        chunk = request.cookies.get(f"{AUTH_COOKIE_NAME}.{i}")
-        if chunk is None:
-            break
-        chunks.append(chunk)
-    if chunks:
-        try:
-            return json.loads("".join(chunks))
-        except (json.JSONDecodeError, ValueError):
-            pass
+    # Direct JSON
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # URL-encoded JSON (legacy)
+    try:
+        return json.loads(urllib.parse.unquote(raw))
+    except (json.JSONDecodeError, ValueError):
+        pass
 
     return None
