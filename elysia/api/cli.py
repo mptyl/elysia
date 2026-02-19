@@ -33,8 +33,8 @@ def cli():
 )
 @click.option(
     "--reload",
-    default=True,
-    help="FastAPI Reload",
+    default=False,
+    help="FastAPI Reload (watch for file changes and auto-restart)",
 )
 def start(port, host, reload):
     """
