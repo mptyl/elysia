@@ -100,7 +100,7 @@ class FollowUpSuggestionsData(BaseModel):
 
 class PromptEnhancementData(BaseModel):
     user_id: str
-    conversation_id: str
+    conversation_id: Optional[str] = None
     prompt: Optional[str] = None
     suggestion: str
 
