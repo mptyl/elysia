@@ -98,6 +98,13 @@ class FollowUpSuggestionsData(BaseModel):
     conversation_id: str
 
 
+class PromptEnhancementData(BaseModel):
+    user_id: str
+    conversation_id: str
+    prompt: Optional[str] = None
+    suggestion: str
+
+
 # class BackendConfig(BaseModel):
 #     settings: dict[str, Any]
 #     style: str

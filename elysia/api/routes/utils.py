@@ -6,8 +6,10 @@ from elysia.api.api_types import (
     DebugData,
     FollowUpSuggestionsData,
     NERData,
+    PromptEnhancementData,
     TitleData,
 )
+from elysia.prompt_enhancer.enhancer import enhance_prompt, refine_prompt
 
 from elysia.tree.tree import Tree
 
@@ -239,12 +241,34 @@ async def debug(data: DebugData, user_manager: UserManager = Depends(get_user_ma
         )
 
 
-# @router.post("/get_user_requests")
-# async def get_user_requests(
-#     data: GetUserRequestsData, user_manager: UserManager = Depends(get_user_manager)
-# ):
-#     num_requests, max_requests = await user_manager.get_user_requests(data.user_id)
-#     return JSONResponse(
-#         content={"num_requests": num_requests, "max_requests": max_requests},
-#         status_code=200,
-#     )
+@router.post("/enhance_prompt")
+async def enhance_prompt_endpoint(
+    data: PromptEnhancementData,
+    user_manager: UserManager = Depends(get_user_manager),
+):
+    logger.debug(f"/enhance_prompt API request received")
+    logger.debug(f"User ID: {data.user_id}, has existing prompt: {data.prompt is not None}")
+
+    if user_manager.check_tree_timeout(data.user_id, data.conversation_id):
+        return JSONResponse(
+            content={"enhanced_prompt": "", "feedback": "", "error": "Conversation has timed out"},
+            status_code=408,
+        )
+
+    try:
+        tree: Tree = await user_manager.get_tree(data.user_id, data.conversation_id)
+        base_lm = tree.base_lm
+
+        if data.prompt is None or data.prompt.strip() == "":
+            result = await enhance_prompt(data.suggestion, base_lm)
+        else:
+            result = await refine_prompt(data.prompt, data.suggestion, base_lm)
+
+        return JSONResponse(content=result, status_code=200)
+
+    except Exception as e:
+        logger.exception("Error in /enhance_prompt API")
+        return JSONResponse(
+            content={"enhanced_prompt": "", "feedback": "", "error": str(e)},
+            status_code=200,
+        )
