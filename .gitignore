@@ -168,6 +168,8 @@ resources.txt
 # local user configs
 elysia/api/user_configs/*
 !elysia/api/user_configs/__init__.py
+elysia/api/static
+elysia/api/static/**
 
 # profiling
 *.prof
