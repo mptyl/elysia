@@ -6,8 +6,11 @@ from elysia.api.api_types import (
     DebugData,
     FollowUpSuggestionsData,
     NERData,
+    PromptEnhancementData,
     TitleData,
 )
+from elysia.prompt_enhancer.enhancer import enhance_prompt, refine_prompt
+from elysia.guardrails.ethical_guard import run_pre_query_check
 
 from elysia.tree.tree import Tree
 
@@ -21,7 +24,7 @@ from elysia.api.dependencies.common import get_user_manager
 from elysia.api.services.user import UserManager
 
 # Settings
-from elysia.config import nlp
+from elysia.config import nlp, load_base_lm
 
 # util
 from elysia.api.core.log import logger
@@ -239,12 +242,62 @@ async def debug(data: DebugData, user_manager: UserManager = Depends(get_user_ma
         )
 
 
-# @router.post("/get_user_requests")
-# async def get_user_requests(
-#     data: GetUserRequestsData, user_manager: UserManager = Depends(get_user_manager)
-# ):
-#     num_requests, max_requests = await user_manager.get_user_requests(data.user_id)
-#     return JSONResponse(
-#         content={"num_requests": num_requests, "max_requests": max_requests},
-#         status_code=200,
-#     )
+@router.post("/enhance_prompt")
+async def enhance_prompt_endpoint(
+    data: PromptEnhancementData,
+    user_manager: UserManager = Depends(get_user_manager),
+):
+    logger.debug(f"/enhance_prompt API request received")
+    logger.debug(f"User ID: {data.user_id}, has existing prompt: {data.prompt is not None}")
+
+    try:
+        # Ensure user exists (idempotent) and get their settings for LLM config
+        await user_manager.add_user_local(data.user_id)
+        local_user = await user_manager.get_user_local(data.user_id)
+        settings = local_user["tree_manager"].config.settings
+        base_lm = load_base_lm(settings)
+
+        # Pre-query ethical guard: only allow clearly ethical prompts
+        prompt_to_check = data.suggestion
+        is_violation, requires_guidance, violated_category, reasoning = (
+            await run_pre_query_check(
+                prompt=prompt_to_check,
+                history=[],
+                base_lm=base_lm,
+                logger=logger,
+                ethical_guard_log=True,
+            )
+        )
+
+        if is_violation or requires_guidance:
+            logger.info(
+                f"[ETHICAL-GUARD] enhance_prompt blocked: "
+                f"violation={is_violation}, guidance={requires_guidance}, "
+                f'category="{violated_category}"'
+            )
+            return JSONResponse(
+                content={
+                    "enhanced_prompt": "",
+                    "feedback": (
+                        "Non è possibile migliorare questo prompt in quanto il suo contenuto "
+                        "risulta in contrasto con i principi etici aziendali"
+                        f" (categoria: {violated_category})."
+                    ),
+                    "error": "",
+                },
+                status_code=200,
+            )
+
+        if data.prompt is None or data.prompt.strip() == "":
+            result = await enhance_prompt(data.suggestion, base_lm)
+        else:
+            result = await refine_prompt(data.prompt, data.suggestion, base_lm)
+
+        return JSONResponse(content=result, status_code=200)
+
+    except Exception as e:
+        logger.exception("Error in /enhance_prompt API")
+        return JSONResponse(
+            content={"enhanced_prompt": "", "feedback": "", "error": str(e)},
+            status_code=200,
+        )

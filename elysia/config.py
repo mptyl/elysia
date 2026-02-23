@@ -61,7 +61,7 @@ provider_to_models = {
     ],
     "openrouter/google": [
         "gemini-3-flash-preview",
-        "gemini-3-pro-preview",
+        "gemini-3.1-pro-preview",
         "gemini-2.5-flash",
         "gemini-2.0-flash-001",
         "gemini-2.5-pro",
@@ -69,7 +69,7 @@ provider_to_models = {
     ],
     "gemini": [
         "gemini-3-flash-preview",
-        "gemini-3-pro-preview",
+        "gemini-3.1-pro-preview",
         "gemini-2.5-flash",
         "gemini-2.0-flash-001",
         "gemini-2.5-pro",
@@ -336,13 +336,13 @@ class Settings:
                 self.BASE_PROVIDER = "openrouter/google"
                 self.COMPLEX_PROVIDER = "openrouter/google"
                 self.BASE_MODEL = "gemini-3-flash-preview"
-                self.COMPLEX_MODEL = "gemini-3-pro-preview"
+                self.COMPLEX_MODEL = "gemini-3.1-pro-preview"
             elif os.getenv("GEMINI_API_KEY", None):
                 # use gemini 2.0 flash
                 self.BASE_PROVIDER = "gemini"
                 self.COMPLEX_PROVIDER = "gemini"
                 self.BASE_MODEL = "gemini-3-flash-preview"
-                self.COMPLEX_MODEL = "gemini-3-pro-preview"
+                self.COMPLEX_MODEL = "gemini-3.1-pro-preview"
             elif os.getenv("OPENAI_API_KEY", None):
                 # use gpt family
                 self.BASE_PROVIDER = "openai"

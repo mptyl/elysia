@@ -86,8 +86,8 @@ models = {
             "speed": "fast",
             "accuracy": "high",
         },
-        "gemini-3-pro-preview": {
-            "name": "gemini-3-pro-preview",
+        "gemini-3.1-pro-preview": {
+            "name": "gemini-3.1-pro-preview",
             "api_keys": ["openrouter_api_key"],
             "speed": "slow",
             "accuracy": "high",
@@ -124,8 +124,8 @@ models = {
             "speed": "fast",
             "accuracy": "high",
         },
-        "gemini-3-pro-preview": {
-            "name": "gemini-3-pro-preview",
+        "gemini-3.1-pro-preview": {
+            "name": "gemini-3.1-pro-preview",
             "api_keys": ["gemini_api_key"],
             "speed": "slow",
             "accuracy": "high",
