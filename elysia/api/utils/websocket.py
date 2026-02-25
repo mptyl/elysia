@@ -54,6 +54,8 @@ async def help_websocket(websocket: WebSocket, ws_route: Callable):
                         except asyncio.TimeoutError:
                             continue
 
+                except (WebSocketDisconnect, RuntimeError):
+                    raise  # Let outer handlers manage disconnect
                 except Exception as e:
                     error = error_payload(text=str(e), conversation_id="", query_id="")
                     await websocket.send_json(error)
@@ -110,5 +112,5 @@ async def help_websocket(websocket: WebSocket, ws_route: Callable):
     finally:
         try:
             await websocket.close()
-        except RuntimeError:
+        except (RuntimeError, WebSocketDisconnect):
             logger.info("WebSocket already closed")
