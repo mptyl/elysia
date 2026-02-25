@@ -28,7 +28,7 @@ def cli():
 )
 @click.option(
     "--host",
-    default="localhost",
+    default="0.0.0.0",
     help="FastAPI Host",
 )
 @click.option(
@@ -46,6 +46,7 @@ def start(port, host, reload):
         host=host,
         port=port,
         reload=reload,
+        ws="wsproto",
     )
 
 
