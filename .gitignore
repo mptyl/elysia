@@ -165,11 +165,8 @@ elysia-frontend/.git/*
 # resources
 resources.txt
 
-# local user configs
-elysia/api/user_configs/*
-!elysia/api/user_configs/__init__.py
-elysia/api/static
-elysia/api/static/**
+# elysia/api (build artifacts, static files, user configs)
+elysia/api/
 
 # profiling
 *.prof
