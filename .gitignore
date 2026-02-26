@@ -165,8 +165,9 @@ elysia-frontend/.git/*
 # resources
 resources.txt
 
-# elysia/api (build artifacts, static files, user configs)
-elysia/api/
+# elysia/api (build artifacts and runtime data)
+elysia/api/static/
+elysia/api/user_configs/
 
 # profiling
 *.prof
