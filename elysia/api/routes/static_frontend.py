@@ -15,11 +15,12 @@ import json
 import os
 import time
 import urllib.parse
+from pathlib import Path
 from typing import Optional
 
 import httpx
 from fastapi import APIRouter, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
 router = APIRouter()
 
@@ -295,16 +296,21 @@ async def auth_session(request: Request):
 # Auth: GET /auth/callback
 # ---------------------------------------------------------------------------
 
+_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+
+
 @router.get("/auth/callback", tags=["auth"])
 async def auth_callback(request: Request):
     """
     OAuth callback handler.
-    - PKCE flow: exchange ?code= for session, set cookie, redirect home.
-    - Implicit flow: serve HTML that reads tokens from hash fragment,
-      posts to /api/auth/session, then redirects home.
+
+    Serves the static Next.js /auth/callback page and lets the browser-side
+    supabase.auth.exchangeCodeForSession() handle PKCE. This avoids re-implementing
+    PKCE in Python and relies on @supabase/ssr reading the cookie verifier correctly.
+
+    Only error redirects are handled server-side (before HTML is served).
     """
     origin = _get_origin(request)
-    code = request.query_params.get("code")
     error = request.query_params.get("error")
     error_description = request.query_params.get("error_description")
 
@@ -314,32 +320,17 @@ async def auth_callback(request: Request):
             login_url += f"&error_description={urllib.parse.quote(error_description)}"
         return RedirectResponse(url=login_url, status_code=302)
 
-    if code:
-        # PKCE flow: exchange code for tokens via Supabase
-        cookie_header = request.headers.get("cookie", "")
-        token_resp = await _get_client().post(
-            f"{SUPABASE_INTERNAL_URL}/auth/v1/token?grant_type=pkce",
-            headers={
-                "apikey": SUPABASE_ANON_KEY,
-                "content-type": "application/json",
-                "cookie": cookie_header,
-            },
-            json={"auth_code": code},
-        )
+    # Serve the pre-built static callback page.
+    # The compiled React bundle calls exchangeCodeForSession(code) which reads
+    # the PKCE verifier from the browser cookie and exchanges with GoTrue.
+    for candidate in [
+        _STATIC_DIR / "auth" / "callback.html",
+        _STATIC_DIR / "auth" / "callback" / "index.html",
+    ]:
+        if candidate.is_file():
+            return FileResponse(str(candidate))
 
-        if token_resp.status_code != 200:
-            return JSONResponse(
-                {"error": "Code exchange failed", "details": token_resp.text},
-                status_code=400,
-            )
-
-        tokens = token_resp.json()
-
-        # Serve an HTML page that uses the Supabase JS client to call setSession().
-        # This ensures cookies are written in exactly the format createBrowserClient expects.
-        return _session_bootstrap_html(origin, tokens)
-
-    # Implicit flow fallback: also use setSession() via JS
+    # Fallback if static files are not built yet (dev without assemble)
     return _session_bootstrap_html(origin, None)
 
 
