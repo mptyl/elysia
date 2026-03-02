@@ -459,6 +459,25 @@ def _catch_weaviate_errors(e: WeaviateBaseError):
                 "You are trying to do hybrid or vector search on a collection that has no vectorizer. "
                 "You can only perform filter-only or keyword search on this collection. "
             )
+        elif "no api key found" in e.message.lower():
+            msg = e.message
+            api_key_name = ""
+            marker = "environment variable under "
+            if marker in msg:
+                start = msg.find(marker) + len(marker)
+                end = msg.find('"', start + 1) if msg[start] == '"' else msg.find('\n', start)
+                if end == -1:
+                    end = len(msg)
+                api_key_name = msg[start:end].strip('" ')
+
+            raise QueryError(
+                f"The vectorizer module for this collection requires an API key "
+                f"({api_key_name or 'unknown'}) that is not configured. "
+                f"This is NOT the Weaviate connection key — it is the API key for the "
+                f"embedding model (e.g. Cohere, OpenAI) used to vectorize the collection. "
+                f"The user should either: (1) add the key in Settings > API Keys, or "
+                f"(2) try keyword (BM25) search instead of vector/hybrid search."
+            )
         else:
             raise e
     elif isinstance(e, AuthenticationFailedError):

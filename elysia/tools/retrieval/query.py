@@ -177,23 +177,6 @@ class Query(Tool):
         truth_map = {k.lower(): k for k in true_collection_names}
         return {truth_map.get(k.lower(), k): v for k, v in collection_dict.items()}
 
-    def _parse_weaviate_error(self, error_message: str) -> str:
-        if "no api key found" in error_message.lower():
-            api_error_message = error_message[
-                (
-                    error_message.find("environment variable under ")
-                    + len("environment variable under ")
-                ) :
-            ]
-            api_error_message = api_error_message[: api_error_message.find('"\n')]
-            return (
-                f"The following API key is needed: {api_error_message} for this collection. "
-                "The user must set the API key in the settings. "
-                "Alternatively, you can try keyword (BM25) search instead."
-            )
-
-        return error_message
-
     async def __call__(
         self,
         tree_data: TreeData,

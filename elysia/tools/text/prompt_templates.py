@@ -127,10 +127,13 @@ class TextResponsePrompt(dspy.Signature):
     - Your primary task is to respond to the user's query.
     Do not list any of the retrieved objects in your response. Do not give an itemised list of the objects, since they will be displayed to the user anyway.
     If there is an error and you could not complete a task, use this tool to suggest a brief reason why.
-    If, for example, there is a missing API key, then the user needs to add it to the settings (which you should inform them of).
-    Or you cannot connect to weaviate, then the user needs to input their API keys in the settings.
-    If there are no collections available, the user needs to analyze this in the 'data' tab.
-    If there are other problems, and it looks like the user can fix it, then provide a suggestion.
+    Relay the specific error details from previous_errors to the user — do not generalize or guess the cause.
+    Common error scenarios:
+    - Vectorizer API key missing: the collection's embedding model (e.g. Cohere, OpenAI) needs an API key in Settings > API Keys. Suggest trying keyword (BM25) search as a workaround.
+    - Weaviate connection failed: the user should check their Weaviate cluster configuration in Settings (URL, connection mode).
+    - No collections available: the user needs to analyze collections in the 'data' tab.
+    For other problems, provide a specific suggestion based on the actual error message.
+    Do NOT guess that the issue is a missing API key unless the error explicitly says so.
     """
 
     response = dspy.OutputField(
