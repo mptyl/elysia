@@ -26,6 +26,13 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 
 logger = logging.getLogger(__name__)
 
+# Temporary debug log for sync-profile tracing
+_DEBUG_LOG = "/tmp/sync_profile_debug.log"
+def _dbg(msg: str):
+    import datetime
+    with open(_DEBUG_LOG, "a") as f:
+        f.write(f"{datetime.datetime.now().isoformat()} {msg}\n")
+
 router = APIRouter()
 
 # ---------------------------------------------------------------------------
@@ -369,6 +376,7 @@ async def auth_callback(request: Request):
     - the server-side PKCE exchange fails for any reason
     """
     origin = _get_origin(request)
+    _dbg(f"[callback] HIT /auth/callback code={request.query_params.get('code', 'NONE')[:20]}... cookies={list(request.cookies.keys())}")
 
     # --- Error from provider ---
     error = request.query_params.get("error")
@@ -384,7 +392,9 @@ async def auth_callback(request: Request):
     if code:
         result = await _try_server_side_pkce(request, code, origin)
         if result is not None:
+            _dbg("[callback] PKCE succeeded, returning redirect")
             return result
+        _dbg("[callback] PKCE FAILED, falling back to static page")
         logger.info("[callback] Server-side PKCE failed, falling back to static page")
 
     # --- Fallback: let the browser handle the exchange ---
@@ -426,8 +436,25 @@ async def _try_server_side_pkce(
             code_verifier = "".join(chunks)
 
     if not code_verifier:
+        _dbg(f"[PKCE] No code-verifier cookie found ({verifier_cookie_name})")
         logger.warning("[callback] No code-verifier cookie found (%s)", verifier_cookie_name)
         return None
+
+    # @supabase/ssr stores the code-verifier in base64url format: "base64-{base64url(JSON_string)}"
+    # GoTrue expects the raw code-verifier string, so we must decode it.
+    if code_verifier.startswith("base64-"):
+        try:
+            b64 = code_verifier[7:]
+            b64 += "=" * (-len(b64) % 4)
+            decoded = base64.urlsafe_b64decode(b64).decode("utf-8")
+            code_verifier = json.loads(decoded)
+            _dbg(f"[PKCE] Decoded base64 code-verifier (len={len(code_verifier)})")
+        except Exception as exc:
+            _dbg(f"[PKCE] Failed to decode base64 code-verifier: {exc}")
+            logger.warning("[callback] Failed to decode base64 code-verifier: %s", exc)
+            return None
+    else:
+        _dbg(f"[PKCE] Raw code-verifier (len={len(code_verifier)})")
 
     logger.info("[callback] Found code-verifier, exchanging PKCE code with GoTrue...")
 
@@ -445,9 +472,11 @@ async def _try_server_side_pkce(
             },
         )
     except Exception as exc:
+        _dbg(f"[PKCE] GoTrue request EXCEPTION: {exc}")
         logger.error("[callback] GoTrue token request failed: %s", exc)
         return None
 
+    _dbg(f"[PKCE] GoTrue response: {token_resp.status_code} {token_resp.text[:300]}")
     if token_resp.status_code != 200:
         logger.warning(
             "[callback] GoTrue token exchange failed: %s %s",
@@ -466,8 +495,11 @@ async def _try_server_side_pkce(
 
     # Best-effort profile sync
     try:
-        await _do_sync_profile(access_token)
+        _dbg("[callback] Calling _do_sync_profile...")
+        sync_result = await _do_sync_profile(access_token)
+        _dbg(f"[callback] _do_sync_profile result: {sync_result}")
     except Exception as exc:
+        _dbg(f"[callback] _do_sync_profile EXCEPTION: {exc}")
         logger.error("[callback] Profile sync error (non-fatal): %s", exc)
 
     # Build the redirect response with the auth cookie
@@ -711,9 +743,11 @@ async def auth_sync_profile(request: Request):
     into Supabase user_profiles table.
     """
     logger.info("[sync-profile] called")
+    _dbg(f"[sync-profile POST] called, cookies={list(request.cookies.keys())}")
 
     # Get user from auth cookie or Authorization header
     cookie_data = _read_auth_cookie(request)
+    _dbg(f"[sync-profile POST] cookie_data keys={list(cookie_data.keys()) if cookie_data else 'None'}")
     access_token = None
     if cookie_data:
         access_token = cookie_data.get("access_token")
@@ -722,10 +756,13 @@ async def auth_sync_profile(request: Request):
         if auth_header.startswith("Bearer "):
             access_token = auth_header[7:]
     if not access_token:
+        _dbg("[sync-profile POST] No access token found")
         logger.warning("[sync-profile] No access token found in cookie or header")
         return JSONResponse({"ok": True, "reason": "no_token"})
 
+    _dbg(f"[sync-profile POST] Got token, calling _do_sync_profile...")
     result = await _do_sync_profile(access_token)
+    _dbg(f"[sync-profile POST] result: {result}")
     return JSONResponse({"ok": True, **result})
 
 
@@ -735,7 +772,9 @@ async def _do_sync_profile(access_token: str) -> dict:
     info from Supabase, enriches from the directory service, and upserts into
     the user_profiles table. Returns a dict with the outcome.
     """
+    _dbg(f"[_do_sync_profile] DIRECTORY_SERVICE_URL={DIRECTORY_SERVICE_URL}, AUTH_MODE={DIRECTORY_SERVICE_AUTH_MODE}")
     if not DIRECTORY_SERVICE_URL:
+        _dbg("[_do_sync_profile] DIRECTORY_SERVICE_URL not configured, returning")
         logger.warning("[sync-profile] DIRECTORY_SERVICE_URL not configured")
         return {"reason": "directory_not_configured"}
 
@@ -749,7 +788,9 @@ async def _do_sync_profile(access_token: str) -> dict:
             "authorization": f"Bearer {access_token}",
         },
     )
+    _dbg(f"[_do_sync_profile] Supabase user fetch: {user_resp.status_code}")
     if user_resp.status_code != 200:
+        _dbg(f"[_do_sync_profile] user fetch FAILED: {user_resp.text[:200]}")
         logger.warning("[sync-profile] Supabase user fetch failed: %s %s", user_resp.status_code, user_resp.text[:200])
         return {"reason": "user_fetch_failed"}
 

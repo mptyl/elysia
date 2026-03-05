@@ -107,6 +107,21 @@ async def health_check():
 # Mount the app from static files
 BASE_DIR = Path(__file__).resolve().parent
 
+# Handle Next.js image optimization requests by serving the file directly
+@app.get("/_next/image")
+async def next_image_proxy(url: str):
+    """Serve static files requested via Next.js Image component."""
+    # url is e.g. "/static/mondo-uni-neg.png" — resolve it under static/
+    clean = url.lstrip("/")
+    if clean.startswith("static/"):
+        clean = clean[len("static/"):]
+    file_path = os.path.join(BASE_DIR, "static", clean)
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404, detail="Image not found")
+
+
 # Serve NextJS _next assets at root level (this is crucial!)
 app.mount(
     "/_next",
