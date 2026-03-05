@@ -18,9 +18,13 @@ import urllib.parse
 from pathlib import Path
 from typing import Optional
 
+import logging
+
 import httpx
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -42,8 +46,16 @@ OAUTH_REDIRECT_PATH = os.getenv("NEXT_PUBLIC_OAUTH_REDIRECT_PATH", "/auth/callba
 DIRECTORY_SERVICE_URL = os.getenv("DIRECTORY_SERVICE_URL", "")
 DIRECTORY_SERVICE_AUTH_MODE = os.getenv("DIRECTORY_SERVICE_AUTH_MODE", "none")
 
+# Azure AD Client Credentials (for Microsoft Graph API)
+AZURE_TENANT_ID = os.getenv("AZURE_TENANT_ID", "")
+AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID", "")
+AZURE_CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET", "")
+
 # Shared async HTTP client (created lazily)
 _http_client: Optional[httpx.AsyncClient] = None
+
+# Cached Graph API token (client credentials flow)
+_graph_token_cache: Optional[dict] = None  # {"token": str, "expires_at": float}
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -56,6 +68,50 @@ def _get_client() -> httpx.AsyncClient:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+async def _get_graph_access_token() -> Optional[str]:
+    """
+    Obtain a Microsoft Graph API access token via Client Credentials Flow.
+    Caches the token in memory and reuses it until 5 minutes before expiry.
+    Returns None if Azure credentials are not configured.
+    """
+    global _graph_token_cache
+
+    if _graph_token_cache and _graph_token_cache["expires_at"] > time.time() + 300:
+        return _graph_token_cache["token"]
+
+    if not AZURE_TENANT_ID or not AZURE_CLIENT_ID or not AZURE_CLIENT_SECRET:
+        logger.warning("[graph-token] AZURE_TENANT_ID/CLIENT_ID/CLIENT_SECRET not configured")
+        return None
+
+    url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
+    try:
+        resp = await _get_client().post(
+            url,
+            data={
+                "grant_type": "client_credentials",
+                "client_id": AZURE_CLIENT_ID,
+                "client_secret": AZURE_CLIENT_SECRET,
+                "scope": "https://graph.microsoft.com/.default",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        if resp.status_code != 200:
+            logger.error("[graph-token] Token request failed: %s %s", resp.status_code, resp.text[:300])
+            return None
+
+        data = resp.json()
+        _graph_token_cache = {
+            "token": data["access_token"],
+            "expires_at": time.time() + data.get("expires_in", 3600),
+        }
+        logger.info("[graph-token] Acquired Graph API token (expires_in=%s)", data.get("expires_in"))
+        return _graph_token_cache["token"]
+    except Exception as exc:
+        logger.error("[graph-token] Token request error: %s", exc)
+        return None
+
 
 def _get_origin(request: Request) -> str:
     forwarded_host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
@@ -304,25 +360,34 @@ async def auth_callback(request: Request):
     """
     OAuth callback handler.
 
-    Serves the static Next.js /auth/callback page and lets the browser-side
-    supabase.auth.exchangeCodeForSession() handle PKCE. This avoids re-implementing
-    PKCE in Python and relies on @supabase/ssr reading the cookie verifier correctly.
+    Attempts server-side PKCE exchange when a ``code`` query parameter is
+    present.  If the exchange succeeds the profile is synced immediately,
+    the auth cookie is set and the browser is redirected to ``/``.
 
-    Only error redirects are handled server-side (before HTML is served).
+    Falls back to serving the static React callback page when:
+    - no ``code`` is present (implicit flow — tokens in hash fragment)
+    - the server-side PKCE exchange fails for any reason
     """
     origin = _get_origin(request)
+
+    # --- Error from provider ---
     error = request.query_params.get("error")
     error_description = request.query_params.get("error_description")
-
     if error:
         login_url = f"{origin}/login?error={urllib.parse.quote(error)}"
         if error_description:
             login_url += f"&error_description={urllib.parse.quote(error_description)}"
         return RedirectResponse(url=login_url, status_code=302)
 
-    # Serve the pre-built static callback page.
-    # The compiled React bundle calls exchangeCodeForSession(code) which reads
-    # the PKCE verifier from the browser cookie and exchanges with GoTrue.
+    # --- Try server-side PKCE exchange ---
+    code = request.query_params.get("code")
+    if code:
+        result = await _try_server_side_pkce(request, code, origin)
+        if result is not None:
+            return result
+        logger.info("[callback] Server-side PKCE failed, falling back to static page")
+
+    # --- Fallback: let the browser handle the exchange ---
     for candidate in [
         _STATIC_DIR / "auth" / "callback.html",
         _STATIC_DIR / "auth" / "callback" / "index.html",
@@ -330,8 +395,118 @@ async def auth_callback(request: Request):
         if candidate.is_file():
             return FileResponse(str(candidate))
 
-    # Fallback if static files are not built yet (dev without assemble)
     return _session_bootstrap_html(origin, None)
+
+
+async def _try_server_side_pkce(
+    request: Request, code: str, origin: str
+) -> Optional[Response]:
+    """
+    Try to exchange the PKCE ``code`` with GoTrue server-side.
+
+    Reads the code-verifier from the browser cookie (set by @supabase/ssr
+    during ``signInWithOAuth``).  On success returns a redirect Response
+    with the auth cookie set and the profile synced.  Returns ``None`` on
+    any failure so the caller can fall back to the static page.
+    """
+    # The code-verifier cookie is set by @supabase/ssr with the name
+    # ``<auth-cookie-name>-code-verifier``.
+    verifier_cookie_name = f"{AUTH_COOKIE_NAME}-code-verifier"
+    code_verifier = request.cookies.get(verifier_cookie_name)
+
+    if not code_verifier:
+        # Also try chunked verifier cookies (large verifiers get chunked)
+        chunks = []
+        for i in range(10):
+            chunk = request.cookies.get(f"{verifier_cookie_name}.{i}")
+            if chunk is None:
+                break
+            chunks.append(chunk)
+        if chunks:
+            code_verifier = "".join(chunks)
+
+    if not code_verifier:
+        logger.warning("[callback] No code-verifier cookie found (%s)", verifier_cookie_name)
+        return None
+
+    logger.info("[callback] Found code-verifier, exchanging PKCE code with GoTrue...")
+
+    # Exchange code + verifier with GoTrue's token endpoint
+    try:
+        token_resp = await _get_client().post(
+            f"{SUPABASE_INTERNAL_URL}/auth/v1/token?grant_type=pkce",
+            headers={
+                "apikey": SUPABASE_ANON_KEY,
+                "content-type": "application/json",
+            },
+            json={
+                "auth_code": code,
+                "code_verifier": code_verifier,
+            },
+        )
+    except Exception as exc:
+        logger.error("[callback] GoTrue token request failed: %s", exc)
+        return None
+
+    if token_resp.status_code != 200:
+        logger.warning(
+            "[callback] GoTrue token exchange failed: %s %s",
+            token_resp.status_code,
+            token_resp.text[:300],
+        )
+        return None
+
+    session = token_resp.json()
+    access_token = session.get("access_token")
+    if not access_token:
+        logger.warning("[callback] No access_token in GoTrue response")
+        return None
+
+    logger.info("[callback] PKCE exchange succeeded, syncing profile...")
+
+    # Best-effort profile sync
+    try:
+        await _do_sync_profile(access_token)
+    except Exception as exc:
+        logger.error("[callback] Profile sync error (non-fatal): %s", exc)
+
+    # Build the redirect response with the auth cookie
+    response = RedirectResponse(url=f"{origin}/", status_code=302)
+
+    # Encode the session as base64url (same format @supabase/ssr uses)
+    session_json = json.dumps(session)
+    encoded = "base64-" + base64.urlsafe_b64encode(
+        session_json.encode("utf-8")
+    ).decode("ascii").rstrip("=")
+
+    # Clear stale cookies
+    for i in range(10):
+        response.delete_cookie(f"{AUTH_COOKIE_NAME}.{i}", path="/")
+    response.delete_cookie(AUTH_COOKIE_NAME, path="/")
+    # Clear the code-verifier cookie (no longer needed)
+    response.delete_cookie(verifier_cookie_name, path="/")
+    for i in range(10):
+        response.delete_cookie(f"{verifier_cookie_name}.{i}", path="/")
+
+    # Set the session cookie (chunk if > 3072 chars)
+    max_chunk = 3072
+    if len(encoded) <= max_chunk:
+        response.set_cookie(
+            AUTH_COOKIE_NAME, encoded, path="/", samesite="lax", httponly=False,
+        )
+    else:
+        for idx in range(0, len(encoded), max_chunk):
+            chunk = encoded[idx : idx + max_chunk]
+            response.set_cookie(
+                f"{AUTH_COOKIE_NAME}.{idx // max_chunk}",
+                chunk,
+                path="/",
+                samesite="lax",
+                httponly=False,
+            )
+
+    logger.info("[callback] Auth cookie set, redirecting to home")
+    return response
 
 
 def _session_bootstrap_html(origin: str, tokens: dict | None) -> HTMLResponse:
@@ -535,8 +710,7 @@ async def auth_sync_profile(request: Request):
     Sync user profile from directory service (Graph API / Entra emulator)
     into Supabase user_profiles table.
     """
-    if not DIRECTORY_SERVICE_URL:
-        return JSONResponse({"ok": True, "reason": "directory_not_configured"})
+    logger.info("[sync-profile] called")
 
     # Get user from auth cookie or Authorization header
     cookie_data = _read_auth_cookie(request)
@@ -548,7 +722,24 @@ async def auth_sync_profile(request: Request):
         if auth_header.startswith("Bearer "):
             access_token = auth_header[7:]
     if not access_token:
+        logger.warning("[sync-profile] No access token found in cookie or header")
         return JSONResponse({"ok": True, "reason": "no_token"})
+
+    result = await _do_sync_profile(access_token)
+    return JSONResponse({"ok": True, **result})
+
+
+async def _do_sync_profile(access_token: str) -> dict:
+    """
+    Core profile-sync logic. Given a valid Supabase access_token, fetches user
+    info from Supabase, enriches from the directory service, and upserts into
+    the user_profiles table. Returns a dict with the outcome.
+    """
+    if not DIRECTORY_SERVICE_URL:
+        logger.warning("[sync-profile] DIRECTORY_SERVICE_URL not configured")
+        return {"reason": "directory_not_configured"}
+
+    logger.info("[sync-profile] Got access token, fetching user from Supabase...")
 
     # Get user info from Supabase
     user_resp = await _get_client().get(
@@ -559,32 +750,80 @@ async def auth_sync_profile(request: Request):
         },
     )
     if user_resp.status_code != 200:
-        return JSONResponse({"ok": True, "reason": "user_fetch_failed"})
+        logger.warning("[sync-profile] Supabase user fetch failed: %s %s", user_resp.status_code, user_resp.text[:200])
+        return {"reason": "user_fetch_failed"}
 
     user = user_resp.json()
     user_id = user.get("id")
     email = user.get("email")
     if not email:
-        return JSONResponse({"ok": True, "reason": "no_email"})
+        logger.warning("[sync-profile] No email in user data: %s", user_id)
+        return {"reason": "no_email"}
+
+    logger.info("[sync-profile] User: %s (%s)", email, user_id)
 
     # Fetch from directory service
     graph_url = (
         f"{DIRECTORY_SERVICE_URL}/v1.0/users/"
         f"{urllib.parse.quote(email)}?$select=id,displayName,jobTitle,department,mail"
     )
-    headers = {"Accept": "application/json"}
+    dir_headers: dict[str, str] = {"Accept": "application/json"}
+
+    # If using real Microsoft Graph API, obtain a bearer token via Client Credentials
+    if DIRECTORY_SERVICE_AUTH_MODE == "bearer":
+        graph_token = await _get_graph_access_token()
+        if not graph_token:
+            logger.warning("[sync-profile] Could not acquire Graph API token")
+            return {"reason": "graph_token_failed"}
+        dir_headers["Authorization"] = f"Bearer {graph_token}"
+
     try:
-        dir_resp = await _get_client().get(graph_url, headers=headers)
-    except Exception:
-        return JSONResponse({"ok": True, "reason": "directory_unavailable"})
+        dir_resp = await _get_client().get(graph_url, headers=dir_headers)
+    except Exception as exc:
+        logger.error("[sync-profile] Directory service request error: %s", exc)
+        return {"reason": "directory_unavailable"}
 
     if dir_resp.status_code != 200:
-        return JSONResponse({"ok": True, "reason": "directory_unavailable"})
+        logger.warning("[sync-profile] Directory service returned %s: %s", dir_resp.status_code, dir_resp.text[:200])
+        return {"reason": "directory_unavailable"}
 
     dir_user = dir_resp.json()
+    logger.info("[sync-profile] Directory user data: %s", dir_user)
+
+    # Resolve department_id from the departments table
+    department_id = None
+    department_code = dir_user.get("department")
+    if department_code:
+        try:
+            dept_resp = await _get_client().get(
+                f"{SUPABASE_INTERNAL_URL}/rest/v1/departments",
+                headers={
+                    "apikey": SUPABASE_ANON_KEY,
+                    "authorization": f"Bearer {access_token}",
+                },
+                params={"code": f"eq.{department_code}", "select": "id", "limit": "1"},
+            )
+            if dept_resp.status_code == 200:
+                dept_rows = dept_resp.json()
+                if dept_rows:
+                    department_id = dept_rows[0].get("id")
+                logger.info("[sync-profile] Department lookup: code=%s -> id=%s", department_code, department_id)
+            else:
+                logger.warning("[sync-profile] Department lookup failed: %s %s", dept_resp.status_code, dept_resp.text[:200])
+        except Exception as exc:
+            logger.warning("[sync-profile] Department lookup error: %s", exc)
 
     # Upsert into Supabase user_profiles via PostgREST
-    await _get_client().post(
+    upsert_payload = {
+        "id": user_id,
+        "display_name": dir_user.get("displayName"),
+        "job_title": dir_user.get("jobTitle"),
+        "department": department_code,
+        "department_id": department_id,
+    }
+    logger.info("[sync-profile] Upserting profile: %s", upsert_payload)
+
+    upsert_resp = await _get_client().post(
         f"{SUPABASE_INTERNAL_URL}/rest/v1/user_profiles",
         headers={
             "apikey": SUPABASE_ANON_KEY,
@@ -592,14 +831,11 @@ async def auth_sync_profile(request: Request):
             "content-type": "application/json",
             "prefer": "resolution=merge-duplicates",
         },
-        json={
-            "id": user_id,
-            "job_title": dir_user.get("jobTitle"),
-            "department": dir_user.get("department"),
-        },
+        json=upsert_payload,
     )
+    logger.info("[sync-profile] Upsert response: %s %s", upsert_resp.status_code, upsert_resp.text[:500])
 
-    return JSONResponse({"ok": True})
+    return {"synced": True}
 
 
 # ---------------------------------------------------------------------------
