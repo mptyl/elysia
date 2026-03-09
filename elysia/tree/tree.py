@@ -65,6 +65,7 @@ from elysia.guardrails.ethical_guard import (
     generate_ethical_guidance,
 )
 from elysia.util.collection import retrieve_all_collection_names
+from elysia.util.model_log import resolve_model_id, insert_model_log
 
 
 class Tree:
@@ -1396,6 +1397,71 @@ class Tree:
                 )
         return successive_actions
 
+    def _determine_reason(self) -> str:
+        """
+        Determine if this interaction involved RAG (vector DB search)
+        or was a plain CHAT by checking whether the ``query`` tool
+        appears in the decision history.
+        """
+        for iteration in self.decision_history:
+            for tool_name in iteration:
+                if tool_name == "query":
+                    return "RAG"
+        return "CHAT"
+
+    async def _persist_model_logs(self, reason_override: str | None = None) -> None:
+        """
+        [ATHENA-CUSTOM] Persist token usage to the Supabase ``model_logs``
+        table.  Called once at the end of a completed decision-tree run.
+        """
+        supabase_url = getattr(self.settings, "SUPABASE_URL", "")
+        service_role_key = getattr(self.settings, "SUPABASE_SERVICE_ROLE_KEY", "")
+
+        if not supabase_url or not service_role_key:
+            self.settings.logger.debug(
+                "[MODEL-LOG] Supabase credentials not configured — skipping log persistence."
+            )
+            return
+
+        reason = reason_override if reason_override is not None else self._determine_reason()
+
+        for model_type, provider_attr, model_attr in [
+            ("base_lm", "BASE_PROVIDER", "BASE_MODEL"),
+            ("complex_lm", "COMPLEX_PROVIDER", "COMPLEX_MODEL"),
+        ]:
+            num_calls = self.tracker.get_num_calls(model_type)
+            if num_calls == 0:
+                continue
+
+            input_tokens = self.tracker.get_total_input_tokens(model_type) or 0
+            output_tokens = self.tracker.get_total_output_tokens(model_type) or 0
+
+            provider = getattr(self.settings, provider_attr, "") or ""
+            model = getattr(self.settings, model_attr, "") or ""
+
+            model_id = await resolve_model_id(
+                provider=provider,
+                model=model,
+                supabase_url=supabase_url,
+                service_role_key=service_role_key,
+            )
+
+            if model_id is None:
+                self.settings.logger.warning(
+                    f"[MODEL-LOG] Model '{provider}/{model}' not found in "
+                    f"'models' table — logging with model_id=null."
+                )
+
+            await insert_model_log(
+                model_id=model_id,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                user_id=self.user_id,
+                reason=reason,
+                supabase_url=supabase_url,
+                service_role_key=service_role_key,
+            )
+
     def log_token_usage(self) -> None:
         if not self.low_memory:
             avg_input_base = self.tracker.get_average_input_tokens("base_lm")
@@ -1552,6 +1618,9 @@ class Tree:
                         ethical_guard_log=self.settings.ETHICAL_GUARD_LOG,
                     )
                 self._update_conversation_history("assistant", refusal_text)
+                self.tracker.update_lm_costs(self.base_lm, "base_lm")
+                self.log_token_usage()
+                await self._persist_model_logs(reason_override="ETHICAL_GUARD")
                 yield await self.returner(
                     Response(text=refusal_text),
                     query_id=self.prompt_to_query_id[user_prompt],
@@ -1575,6 +1644,9 @@ class Tree:
                         ethical_guard_log=self.settings.ETHICAL_GUARD_LOG,
                     )
                 self._update_conversation_history("assistant", guidance_text)
+                self.tracker.update_lm_costs(self.base_lm, "base_lm")
+                self.log_token_usage()
+                await self._persist_model_logs(reason_override="ETHICAL_GUARD")
                 yield await self.returner(
                     Response(text=guidance_text),
                     query_id=self.prompt_to_query_id[user_prompt],
@@ -1855,6 +1927,9 @@ class Tree:
                 f"Decision Node Avg. Time: {self.tracker.get_average_time('decision_node'):.2f} seconds"
             )
             self.log_token_usage()
+
+            # [ATHENA-CUSTOM] Persist token usage to Supabase model_logs
+            await self._persist_model_logs()
 
             avg_times = []
             for i, iteration in enumerate(self.decision_history):

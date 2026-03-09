@@ -27,10 +27,10 @@ def sample_profile():
         "response_focus": "managerial",
         "custom_instructions": "Always include a summary table.",
         "custom_instructions_mode": "append",
-        "org_units": {
-            "id": "org-uuid",
+        "departments": {
+            "id": "dept-uuid",
+            "code": "IES",
             "name": "Default",
-            "ai_identity_base": "Default organizational context",
         },
     }
 
@@ -40,7 +40,7 @@ def minimal_profile():
     """Profile with only required fields, missing optional ones."""
     return {
         "id": "test-user-uuid",
-        "org_units": None,
+        "departments": None,
     }
 
 

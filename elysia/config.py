@@ -5,6 +5,7 @@ from litellm import (
     AuthenticationError,
     NotFoundError,
     BadRequestError,
+    RateLimitError,
     models_by_provider,
 )
 from litellm.utils import get_valid_models, check_valid_key
@@ -123,6 +124,15 @@ def is_api_key(key: str) -> bool:
         or key.lower().endswith("_region_name")
         or key.lower().endswith("_token")
     )
+
+
+# [ATHENA-CUSTOM] Capture global API keys from .env at startup.
+# These serve as fallback when per-user keys are missing or exhausted.
+_global_api_keys: dict[str, str] = {
+    env_var.lower(): os.environ[env_var]
+    for env_var in os.environ
+    if is_api_key(env_var) and env_var.lower() != "wcd_api_key" and os.environ[env_var]
+}
 
 
 class Settings:
@@ -661,6 +671,11 @@ class IncorrectModelError(Exception):
 
 
 class ElysiaKeyManager:
+    # [ATHENA-CUSTOM] Track exhausted (rate-limited) user keys across calls.
+    # Maps (settings_id, key_name) -> expiry timestamp. Keys are retried after cooldown.
+    _exhausted_keys: dict[tuple[str, str], float] = {}
+    _RATE_LIMIT_COOLDOWN = 60  # seconds before retrying an exhausted user key
+
     def __init__(self, settings: Settings):
         self.settings = settings
 
@@ -700,6 +715,40 @@ class ElysiaKeyManager:
             )
 
         return False
+
+    def _get_merged_api_keys(self) -> dict[str, str]:
+        """Merge global (.env) API keys with per-user keys.
+
+        User keys take priority. If a user key is marked as exhausted
+        (rate-limited), the global key is used instead until cooldown expires.
+        """
+        import time as _time
+
+        now = _time.time()
+        sid = self.settings.SETTINGS_ID
+
+        # Clean up expired exhausted entries
+        expired = [
+            k for k, expiry in self._exhausted_keys.items() if expiry <= now
+        ]
+        for k in expired:
+            del self._exhausted_keys[k]
+
+        # Start with global keys as the base
+        merged = dict(_global_api_keys)
+
+        # Overlay user keys (user wins), skipping exhausted ones
+        for api_key, value in self.settings.API_KEYS.items():
+            key_lower = api_key.lower()
+            if (sid, key_lower) in self._exhausted_keys:
+                self.settings.logger.info(
+                    f"User key '{api_key}' is rate-limited, falling back to global key."
+                )
+                continue
+            if isinstance(value, str) and value:
+                merged[key_lower] = value
+
+        return merged
 
     def __enter__(self):
 
@@ -745,10 +794,11 @@ class ElysiaKeyManager:
                 self.settings.LOCAL_WEAVIATE_GRPC_PORT
             )
 
-        # update all api keys in env
+        # [ATHENA-CUSTOM] Merge global + user API keys (user wins, with rate-limit fallback)
+        merged_keys = self._get_merged_api_keys()
         warning_api_keys = []
-        for api_key, value in self.settings.API_KEYS.items():
-            if isinstance(value, str):
+        for api_key, value in merged_keys.items():
+            if isinstance(value, str) and value:
                 os.environ[api_key.upper()] = value
             else:
                 warning_api_keys.append(api_key)
@@ -761,9 +811,49 @@ class ElysiaKeyManager:
 
         pass
 
+    def _mark_user_keys_exhausted(self):
+        """Mark user-specific API keys as exhausted after a rate limit error.
+
+        Only marks keys where the user has a different value from the global key,
+        so that the next call falls back to the global key automatically.
+        """
+        import time as _time
+
+        sid = self.settings.SETTINGS_ID
+        expiry = _time.time() + self._RATE_LIMIT_COOLDOWN
+
+        # Identify which provider(s) the current models use
+        providers_in_use = set()
+        if self.settings.BASE_PROVIDER:
+            providers_in_use.add(self.settings.BASE_PROVIDER)
+        if self.settings.COMPLEX_PROVIDER:
+            providers_in_use.add(self.settings.COMPLEX_PROVIDER)
+
+        # Find the API key names for those providers
+        keys_to_mark = set()
+        for provider in providers_in_use:
+            if provider in provider_to_api_keys:
+                keys_to_mark.update(provider_to_api_keys[provider])
+
+        for key_name in keys_to_mark:
+            key_lower = key_name.lower()
+            user_val = self.settings.API_KEYS.get(key_lower, "")
+            global_val = _global_api_keys.get(key_lower, "")
+            # Only mark exhausted if user has a key AND a global fallback exists
+            if user_val and global_val and user_val != global_val:
+                self._exhausted_keys[(sid, key_lower)] = expiry
+                self.settings.logger.warning(
+                    f"Rate limit hit on user key '{key_name}'. "
+                    f"Falling back to global key for {self._RATE_LIMIT_COOLDOWN}s."
+                )
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         # reset env to original
         os.environ = self.existing_env
+
+        # [ATHENA-CUSTOM] On rate limit, mark user keys as exhausted so next call uses global fallback
+        if exc_type is RateLimitError:
+            self._mark_user_keys_exhausted()
 
         if exc_type is NotFoundError or exc_type is BadRequestError:
             self._check_model_availability(

@@ -53,7 +53,7 @@ def build_profile_system_prompt(
     XML template with actual user profile values.
 
     Args:
-        profile: User profile dict from Supabase (with nested ``org_units``).
+        profile: User profile dict from Supabase (with nested ``departments``).
         role_instructions: Role-specific standard instructions text.
 
     Returns:
@@ -64,9 +64,9 @@ def build_profile_system_prompt(
     if not template:
         return ""
 
-    # Extract org_unit name from nested join
-    org_unit = profile.get("org_units") or {}
-    org_unit_name = org_unit.get("name", _DEFAULTS["org_unit_name"])
+    # Extract department name from nested join (departments table via department_id FK)
+    dept_obj = profile.get("departments") or {}
+    org_unit_name = dept_obj.get("name", _DEFAULTS["org_unit_name"])
 
     custom_instructions = profile.get("custom_instructions", _DEFAULTS["custom_instructions"])
     custom_instructions_mode = profile.get(
