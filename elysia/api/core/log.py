@@ -1,4 +1,5 @@
 import logging
+import os
 from rich.logging import RichHandler
 import litellm
 import dspy
@@ -43,7 +44,8 @@ def get_logger():
         logging.getLogger("matplotlib").propagate = False
 
         _logger = logging.getLogger("rich")
-        _logger.setLevel(logging.DEBUG)
+        _log_level = os.getenv("LOGGING_LEVEL", "INFO").upper()
+        _logger.setLevel(getattr(logging, _log_level, logging.INFO))
 
     return _logger
 

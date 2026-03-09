@@ -287,6 +287,8 @@ class Settings:
         self.COMPLEX_PROVIDER = os.getenv("COMPLEX_PROVIDER", None)
         self.MODEL_API_BASE = os.getenv("MODEL_API_BASE", None)
         self.LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "NOTSET")
+        self.LOGGING_LEVEL_INT = logging.getLevelNamesMapping().get(self.LOGGING_LEVEL, logging.NOTSET)
+        self.logger.setLevel(self.LOGGING_LEVEL_INT)
         self.WEAVIATE_IS_LOCAL = os.getenv("WEAVIATE_IS_LOCAL", "False") == "True"
         self.LOCAL_WEAVIATE_PORT = os.getenv("LOCAL_WEAVIATE_PORT", 8080)
         self.LOCAL_WEAVIATE_GRPC_PORT = os.getenv("LOCAL_WEAVIATE_GRPC_PORT", 50051)
@@ -634,7 +636,8 @@ class Settings:
             for item in dir(self)
             if not item.startswith("_")
             and not isinstance(getattr(self, item), Callable)
-            and item not in ["BASE_MODEL_LM", "COMPLEX_MODEL_LM", "logger"]
+            and item not in ["BASE_MODEL_LM", "COMPLEX_MODEL_LM", "logger",
+                            "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
         }
 
     @classmethod
@@ -727,7 +730,17 @@ class ElysiaKeyManager:
 
         User keys take priority. If a user key is marked as exhausted
         (rate-limited), the global key is used instead until cooldown expires.
+
+        If the FORCE_GLOBAL_API_KEYS env var is set to "true", per-user keys
+        are ignored entirely and only the global (.env) keys are used.
         """
+        # [ATHENA-CUSTOM] Allow forcing global API keys for all users
+        if os.getenv("FORCE_GLOBAL_API_KEYS", "false").lower() == "true":
+            self.settings.logger.debug(
+                "FORCE_GLOBAL_API_KEYS is set: ignoring per-user API keys."
+            )
+            return dict(_global_api_keys)
+
         import time as _time
 
         now = _time.time()
