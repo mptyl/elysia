@@ -35,6 +35,7 @@ api_key_to_provider = {
         "openrouter/openai",
         "openrouter/anthropic",
         "openrouter/google",
+        "openrouter/mistralai",
     ],
     "gemini_api_key": ["gemini"],
     "azure_api_key": ["azure"],
@@ -76,6 +77,10 @@ provider_to_models = {
         "gemini-2.5-pro",
         "gemini-2.5-flash-lite",
     ],
+    "openrouter/mistralai": [
+        "mistral-large-2512",
+        "mistral-small-3.2-24b-instruct",
+    ],
     # [/ATHENA-CUSTOM]
 }
 
@@ -85,6 +90,7 @@ provider_to_api_keys = {
     "openrouter/openai": ["openrouter_api_key"],
     "openrouter/anthropic": ["openrouter_api_key"],
     "openrouter/google": ["openrouter_api_key"],
+    "openrouter/mistralai": ["openrouter_api_key"],
     "gemini": ["gemini_api_key"],
     "groq": ["groq_api_key"],
     "databricks": ["databricks_api_key", "databricks_api_base"],
