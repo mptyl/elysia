@@ -53,7 +53,7 @@ class Environment:
     This is if, for example, you retrieve multiple objects from the same collection, each one is stored with different metadata.
     Because, for example, the query used to retrieve each object may be different (and stored differently in the metadata).
 
-    The environment is initialised with a default "SelfInfo.generic" key, which is a list of one object, containing information about Elysia itself.
+    The environment is initialised with a default "SelfInfo.generic" key, which is a list of one object, containing information about Atena itself.
 
     You can use various methods to add, remove, replace, and find objects in the environment. See the methods below for more information.
 
@@ -76,16 +76,16 @@ class Environment:
             self.environment["SelfInfo"] = {}
             self.environment["SelfInfo"]["info"] = [
                 {
-                    "name": "Elysia",
+                    "name": "Atena",
                     "description": "An agentic RAG service in Weaviate.",
                     "purpose": remove_whitespace(
-                        """Elysia is an agentic retrieval augmented generation (RAG) service, where users can query from Weaviate collections,
+                        """Atena is an agentic retrieval augmented generation (RAG) service, where users can query from Weaviate collections,
                     and the assistant will retrieve the most relevant information and answer the user's question. This includes a variety
                     of different ways to query, such as by filtering, sorting, querying multiple collections, and providing summaries
                     and textual responses.
 
-                    Elysia will dynamically display retrieved objects from the collections in the frontend.
-                    Elysia works via a tree-based approach, where the user's question is used to generate a tree of potential
+                    Atena will dynamically display retrieved objects from the collections in the frontend.
+                    Atena works via a tree-based approach, where the user's question is used to generate a tree of potential
                     queries to retrieve the most relevant information.
                     Each end of the tree connects to a separate agent that will perform a specific task, such as retrieval, aggregation, or generation, or more.
 
@@ -96,7 +96,7 @@ class Environment:
                     The decision-agent prompts are designed to be as general as possible, so that they can be used for a variety of different tasks.
                     Some of these variables include conversation history, retrieved objects, the user's original question, train of thought via model reasoning, and more.
 
-                    The backend of Elysia is built with a range of libraries. Elysia is built with a lot of base python, and was constructed from the ground up to keep it as modular as possible.
+                    The backend of Atena is built with a range of libraries. Atena is built with a lot of base python, and was constructed from the ground up to keep it as modular as possible.
                     The LLM components are built with DSPy, a library for training and running LLMs.
                     """
                     ),
@@ -451,7 +451,7 @@ class CollectionData:
 
         if len(self.removed_collections) > 0 and self.logger:
             self.logger.warning(
-                "The following collections have not been pre-processed for Elysia. "
+                "The following collections have not been pre-processed for Atena. "
                 f"{self.removed_collections}. "
                 "Ignoring these collections for now."
             )
@@ -631,7 +631,7 @@ class TreeData:
 
         self.rag_enabled = rag_enabled
 
-        # -- Profile System Prompt (populated by DirectAnswer) --
+        # -- Profile System Prompt (populated at session init by UserManager) --
         self.profile_system_prompt: str = ""
 
         # -- Atlas --
