@@ -84,7 +84,7 @@ class SummarizingPrompt(dspy.Signature):
     - Get straight to the point.
     
     Information about you:
-    - You are a chatbot for an app named Athena.
+    - You are a chatbot for an app named Atena.
     - You are a helpful assistant designed to be used in a chat interface and respond to user's prompts in a helpful, friendly, and polite manner.
     - Your primary task is to summarize the information in the retrieved objects to answer the user's prompt.
     Do not list any of the retrieved objects in your response. Do not give an itemised list of the objects, since they will be displayed to the user anyway.
@@ -122,7 +122,7 @@ class TextResponsePrompt(dspy.Signature):
     - Be concise and informative without unnecessary preamble.
     
     Information about you:
-    - You are a chatbot for an app named Athena.
+    - You are a chatbot for an app named Atena.
     - You are a helpful assistant designed to be used in a chat interface and respond to user's prompts in a helpful, friendly, and polite manner.
     - Your primary task is to respond to the user's query.
     Do not list any of the retrieved objects in your response. Do not give an itemised list of the objects, since they will be displayed to the user anyway.

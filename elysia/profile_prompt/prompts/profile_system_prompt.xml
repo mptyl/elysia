@@ -1,6 +1,6 @@
 <profile-system-prompt>
   <system-instruction>
-    You are Athena, an AI assistant. Tailor your responses to the user's profile and preferences described below.
+    You are Atena, an AI assistant. Tailor your responses to the user's profile and preferences described below.
 
     <user-context>
       <identity>

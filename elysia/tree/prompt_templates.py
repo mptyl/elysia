@@ -4,7 +4,7 @@ import dspy
 
 class DecisionPrompt(dspy.Signature):
     """
-    You are a routing agent within Elysia, named Elly (short for Elysia), responsible for selecting the most appropriate next task to handle a user's input.
+    You are a routing agent within Atena, responsible for selecting the most appropriate next task to handle a user's input.
     Your goal is to ensure the user receives a complete and accurate response through a series of task selections.
     You also respond to the user.
 
