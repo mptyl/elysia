@@ -17,6 +17,7 @@ from elysia.api.core.log import logger
 from elysia.api.utils.config import Config
 from elysia.api.utils.config import FrontendConfig
 from elysia.tree.util import get_saved_trees_weaviate
+from elysia.profile_prompt import fetch_and_build_profile_prompt
 
 
 class TreeTimeoutError(Update):
@@ -313,7 +314,20 @@ class UserManager:
                 conversation_id,
                 low_memory,
             )
-        return tree_manager.get_tree(conversation_id)
+
+        tree = tree_manager.get_tree(conversation_id)
+
+        # [ATHENA-CUSTOM] Fetch profile once per user session, cache at UserManager level
+        if "profile_system_prompt" not in self.users[user_id]:
+            try:
+                self.users[user_id]["profile_system_prompt"] = (
+                    await fetch_and_build_profile_prompt(user_id, tree_manager.settings)
+                )
+            except Exception:
+                self.users[user_id]["profile_system_prompt"] = ""
+        tree.tree_data.profile_system_prompt = self.users[user_id]["profile_system_prompt"]
+
+        return tree
 
     async def save_tree(
         self,
