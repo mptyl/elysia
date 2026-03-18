@@ -1,9 +1,9 @@
 # Querying a Weaviate Database
 
-This example will walk through using Elysia to:
+This example will walk through using Atena to:
 
-* Setting up your API keys with Elysia for using models
-* Setting up your Weaviate collections for usage with Elysia
+* Setting up your API keys with Atena for using models
+* Setting up your Weaviate collections for usage with Atena
 * Query or aggregate your Weaviate collections
 * How the decision tree works
 
@@ -17,7 +17,7 @@ Before setting up your environment and connecting to Weaviate, make sure you hav
 
 ## Setting up
 
-Let's use the basic elysia `configure` to both *set up your models* and *connect to your Weaviate instance*.
+Let's use the basic Atena `configure` to both *set up your models* and *connect to your Weaviate instance*.
 
 ```python
 from elysia import configure
@@ -82,9 +82,9 @@ If you want to skip this step and use data from your own collection, simply repl
     ```
     This will by default use the settings inherited from the earlier `configure` function, so the Weaviate REST endpoint URL and API key set up previously.
 
-## Preprocessing with Elysia
+## Preprocessing with Atena
 
-Now that you are fully set up with models and Weaviate integrations, you can move onto preprocessing your collection for use with Elysia. This is as simple as:
+Now that you are fully set up with models and Weaviate integrations, you can move onto preprocessing your collection for use with Atena. This is as simple as:
 ```python
 from elysia import preprocess
 preprocess("JeopardyQuestion")
@@ -297,7 +297,7 @@ print(tree.view())
          environment, do not choose this tool.
 ```
 
-These are the default tools available in a regular initialisation of the Elysia Tree, as well as their tool descriptions. To change the default tools available on a tree, you can initialise the tree with a different `branch_initialisation`, e.g.
+These are the default tools available in a regular initialisation of the Atena Tree, as well as their tool descriptions. To change the default tools available on a tree, you can initialise the tree with a different `branch_initialisation`, e.g.
 
 ```python
 tree = Tree(branch_initialisation="empty")
@@ -309,7 +309,7 @@ will create a tree with no tools, and you can add custom tools via `tree.add_too
 
 ## Running the Decision Tree
 
-To run the tool-running pipeline of the Elysia decision tree, you can simply call the class, i.e.
+To run the tool-running pipeline of the Atena decision tree, you can simply call the class, i.e.
 
 ```python
 response, objects = tree(
@@ -320,7 +320,7 @@ response, objects = tree(
 
 <details closed>
 <summary>Real time updates</summary>
-The default behaviour is that Elysia will print updates on what it is doing. In this example, this is
+The default behaviour is that Atena will print updates on what it is doing. In this example, this is
 ```
 ╭──────────── User prompt ─────────────╮
 │                                      │

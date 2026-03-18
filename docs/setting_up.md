@@ -1,13 +1,13 @@
 
-# Setting up Elysia
+# Setting up Atena
 
-Elysia _requires_ setting up your LMs and API keys for the decision tree functionality to work. Additionally, to use Elysia to its full potential (adaptively searching and retrieving Weaviate data), it requires a _preprocessing_ step.
+Atena _requires_ setting up your LMs and API keys for the decision tree functionality to work. Additionally, to use Atena to its full potential (adaptively searching and retrieving Weaviate data), it requires a _preprocessing_ step.
 
-Elysia can be configured in three different ways: via the _configure_ function, by creating a _Settings_ object, or by setting _environment variables_ (in a `.env` file).
+Atena can be configured in three different ways: via the _configure_ function, by creating a _Settings_ object, or by setting _environment variables_ (in a `.env` file).
 
 ## Model Setup
 
-Elysia uses two language models for different types of tasks;
+Atena uses two language models for different types of tasks;
 
 * The **base model** is responsible for the decision agent, as well as any tools that specify its use.
 * The **complex model** is used for more complex tasks, and is responsible for any tools that specify its use (such as the inbuilt query and aggregate tools).
@@ -15,7 +15,7 @@ Elysia uses two language models for different types of tasks;
 
 ### Configuring Models
 
-To configure different LMs as default for all functions within Elysia, you can use the global [`configure` function](Reference/Settings.md#elysia.config.configure). For example, to use the GPT family of models, you can set:
+To configure different LMs as default for all functions within Atena, you can use the global [`configure` function](Reference/Settings.md#elysia.config.configure). For example, to use the GPT family of models, you can set:
 
 ```python
 from elysia import configure
@@ -28,7 +28,7 @@ configure(
     openai_api_key="..." # replace with your API key
 )
 ```
-The `configure` function can be used to specify both the `base_model` and `complex_model`. Both require separately setting a provider; in this case `openai` Instead, you can create your own `Settings` object which can be passed to any of the Elysia functions that use LMs to have a separate settings instance for each initialisation. E.g.,
+The `configure` function can be used to specify both the `base_model` and `complex_model`. Both require separately setting a provider; in this case `openai` Instead, you can create your own `Settings` object which can be passed to any of the Atena functions that use LMs to have a separate settings instance for each initialisation. E.g.,
 
 ```python
 from elysia import Settings, Tree
@@ -66,22 +66,22 @@ configure(
 
 On the app side, this is configurable via the 'Api Base URL' parameter in the Settings. Set both of your providers to `ollama`, and your base and complex model to whatever model you are currently hosting, and this should work out-of-the-box.
 
-**Warning**: Elysia uses a *long context*, quite long context, due to the nature of the collection schemas, environment and more being included in every prompt. So these models will run quite slowly. However, on the backend, you can configure this to be faster by disabling connection to your Weaviate cluster, if applicable, by removing your weaviate api key and url. There is an optional setting
+**Warning**: Atena uses a *long context*, quite long context, due to the nature of the collection schemas, environment and more being included in every prompt. So these models will run quite slowly. However, on the backend, you can configure this to be faster by disabling connection to your Weaviate cluster, if applicable, by removing your weaviate api key and url. There is an optional setting
 ```python
 settings.configure(
 	base_use_reasoning=False,
 	complex_use_reasoning=False
 )
 ```
-which will remove chain of thought prompting for the base and complex model, respectively. *Use this with caution though*, as it will degrade accuracy significantly. Additionally, some smaller models struggle with the complex nature of multiple outputs in DSPy and Elysia, so you might encounter some errors. In testing, the `gpt-oss` models work relatively well.
+which will remove chain of thought prompting for the base and complex model, respectively. *Use this with caution though*, as it will degrade accuracy significantly. Additionally, some smaller models struggle with the complex nature of multiple outputs in DSPy and Atena, so you might encounter some errors. In testing, the `gpt-oss` models work relatively well.
 
-*Note: Simplifying model outputs and reducing the context window size for local models is planned for a future version of Elysia. Stay tuned!*
+*Note: Simplifying model outputs and reducing the context window size for local models is planned for a future version of Atena. Stay tuned!*
 
 ## Weaviate Integration
 
 ### Weaviate Cloud 
 
-To use Elysia with Weaviate cloud, you need to specify your Weaviate cluster details. These can be set via the Weaviate Cluster URL (`WCD_URL`) and the Weaviate Cluster API Key (`WCD_API_KEY`). To set these values, you can use `configure` on the settings:
+To use Atena with Weaviate cloud, you need to specify your Weaviate cluster details. These can be set via the Weaviate Cluster URL (`WCD_URL`) and the Weaviate Cluster API Key (`WCD_API_KEY`). To set these values, you can use `configure` on the settings:
 ```python
 from elysia import configure
 configure(
@@ -99,7 +99,7 @@ WCD_API_KEY=... # replace with your WCD_API_KEY
 
 ### Local Weaviate
 
-You can run Elysia with a locally running Weaviate (e.g. Docker), making Elysia able to be run with *completely open source* software. To do so, you only need to set your local Weaviate instance variables. Configure Elysia to use the local instance by setting in the `.env` file:
+You can run Atena with a locally running Weaviate (e.g. Docker), making Atena able to be run with *completely open source* software. To do so, you only need to set your local Weaviate instance variables. Configure Atena to use the local instance by setting in the `.env` file:
 
 ```
 WEAVIATE_IS_LOCAL=True
@@ -126,7 +126,7 @@ configure(
 ```
 
 Notes:
-- If `WEAVIATE_IS_LOCAL=True` and no URL is provided, Elysia defaults to `localhost` with ports shown above.
+- If `WEAVIATE_IS_LOCAL=True` and no URL is provided, Atena defaults to `localhost` with ports shown above.
 - Local mode can work without an API key; if you enable auth locally, set `WCD_API_KEY` accordingly.
 
 The easiest way to set up a local Weaviate instance is via Docker, [see here for detailed instructions.](https://docs.weaviate.io/deploy/installation-guides/docker-installation)
@@ -170,7 +170,7 @@ For more information about custom Weaviate connections, [see here.](https://docs
 
 ### Connection Priority
 
-In Elysia, you can technically set `weaviate_is_custom=True`, `weaviate_is_local=True` as well as your Weaviate cloud credentials at the same time. We recommend only using one connection method at once to remove any confusion. But Elysia will prioritise your connection in the following order:
+In Atena, you can technically set `weaviate_is_custom=True`, `weaviate_is_local=True` as well as your Weaviate cloud credentials at the same time. We recommend only using one connection method at once to remove any confusion. But Atena will prioritise your connection in the following order:
 
 1. Custom Connections
 2. Local Connections
@@ -179,11 +179,11 @@ In Elysia, you can technically set `weaviate_is_custom=True`, `weaviate_is_local
 So for example, if you specify settings for both local and custom, it will use the custom connection.
 
 
-Additionally, you need to _preprocess_ your collections for Elysia to use the built in Weaviate-based tools, see below for details.
+Additionally, you need to _preprocess_ your collections for Atena to use the built in Weaviate-based tools, see below for details.
 
 ## Preprocessing Collections
 
-[The `preprocess` function](Reference/Preprocessor.md) must be used on the Weaviate collections you plan to use within Elysia. 
+[The `preprocess` function](Reference/Preprocessor.md) must be used on the Weaviate collections you plan to use within Atena. 
 
 ```python
 from elysia import preprocess
@@ -193,7 +193,7 @@ preprocess("<your_collection_name>")
 Preprocessing does several things:
 
 - Creates an LLM generated summary of the collection, including descriptions of the fields in the dataset.
-- Creates 'mappings', so that fields in the collection can be mapped to frontend-specific fields. This enables the Elysia frontend app to display items from the collection when retrieved in the app.
+- Creates 'mappings', so that fields in the collection can be mapped to frontend-specific fields. This enables the Atena frontend app to display items from the collection when retrieved in the app.
 - Calculates summary statistics, such as the mean, maximum and minimum values of number fields, as well as statistics for other fields.
 - Collects other metadata such as any named vectors, what index types are used, if the inverted index is configured to index e.g. creation time.
 
@@ -205,7 +205,7 @@ You have access to two functions, `preprocess_async`, which must be awaited, and
 
 - **`collection_names`** (*list[str])*: The names of the collections to preprocess.
 - **`client_manager`** *(ClientManager)*: The client manager to use.
-    The ClientManager class is how Elysia interacts with Weaviate client.
+    The ClientManager class is how Atena interacts with Weaviate client.
     If you are unsure of this, do not provide this argument, it will default to the Weaviate cluster you selected via the `Settings`, or via `configure`/environment variables.
 
 As well, the LLM requires a number of objects retrieved from the collection, at random, to help provide its summary. Since objects in collections vary greatly in token size (and hence LLM compute time/cost), you can adjust the following parameters to change how many objects are used for this sample.
@@ -248,4 +248,4 @@ You can use [`delete_preprocessed_collection`](Reference/Preprocessor.md#elysia.
 ```python
 delete_preprocessed_collection(collection_name = ...) 
 ```
-which permanently deletes the preprocessed collection (not the original collection). You will need to rerun preprocess for the original collection to be used for the Weaviate integration in Elysia again.
+which permanently deletes the preprocessed collection (not the original collection). You will need to rerun preprocess for the original collection to be used for the Weaviate integration in Atena again.

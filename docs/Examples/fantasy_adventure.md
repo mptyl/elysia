@@ -1,7 +1,7 @@
 # Example: Creating a Fantasy Adventure Game
 
 Coming soon.
-<!-- Say we want to use Elysia in a different way to the default setup. So instead of querying and searching data in Weaviate collections, we want Elysia to create and keep track of a fantasy tabletop RPG.  -->
+<!-- Say we want to use Atena in a different way to the default setup. So instead of querying and searching data in Weaviate collections, we want Atena to create and keep track of a fantasy tabletop RPG.  -->
 
 
 

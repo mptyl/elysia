@@ -1,4 +1,4 @@
-# Athena Customizations (Backend)
+# Atena Customizations (Backend)
 
 This document tracks all divergences from the upstream `weaviate/elysia` repository.
 
@@ -43,7 +43,7 @@ This document tracks all divergences from the upstream `weaviate/elysia` reposit
 ### High Risk Files (Manual Resolution Likely Required)
 1. **`elysia/config.py`**:
    - **Risk**: High. We inject custom providers (Gemini, OpenRouter) into `provider_to_models` and `Settings`.
-   - **Resolution**: preserve Athena's `provider_to_models` additions and `Settings` defaults while accepting upstream's new configurations.
+   - **Resolution**: preserve Atena's `provider_to_models` additions and `Settings` defaults while accepting upstream's new configurations.
 
 2. **`elysia/tree/util.py`**:
    - **Risk**: High. We modified the `run_tree` logic to support `direct_answer` (RAG bypass).

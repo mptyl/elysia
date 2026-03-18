@@ -167,15 +167,15 @@ tmux kill-session -t backend
 
 ---
 
-## 4. Gestire un tmux condiviso (setup Athena)
+## 4. Gestire un tmux condiviso (setup Atena)
 
-Su Athena il team condivide una singola sessione tmux a cui tutti i membri del gruppo `athena` possono agganciarsi. Questo permette a chiunque di controllare i log dei servizi, riavviarli, o lavorare in finestre separate senza dover chiedere a chi ha lanciato il processo.
+Su Atena il team condivide una singola sessione tmux a cui tutti i membri del gruppo `athena` possono agganciarsi. Questo permette a chiunque di controllare i log dei servizi, riavviarli, o lavorare in finestre separate senza dover chiedere a chi ha lanciato il processo.
 
 ### Come funziona
 
 Normalmente ogni utente ha la propria directory di socket tmux (`/tmp/tmux-<UID>/default`), inaccessibile agli altri. Per condividere una sessione si crea una **socket condivisa** in un percorso noto, con i permessi impostati sul gruppo.
 
-Sul server Athena:
+Sul server Atena:
 
 | Elemento | Valore |
 |---|---|
@@ -242,7 +242,7 @@ Una volta agganciati alla sessione, si naviga tra le finestre con:
 | `Ctrl+B, 0-9` | Va alla finestra con quel numero |
 | `Ctrl+B, w` | Mostra l'elenco delle finestre e permette di scegliere |
 
-### Setup tipico per Athena
+### Setup tipico per Atena
 
 Un esempio di avvio completo della sessione condivisa con le finestre per i servizi principali:
 

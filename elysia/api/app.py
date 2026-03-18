@@ -71,7 +71,7 @@ async def lifespan(app: FastAPI):
 
 
 # Create FastAPI app instance
-app = FastAPI(title="Elysia API", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="Atena API", version="0.3.0", lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(

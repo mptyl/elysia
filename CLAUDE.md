@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Elysia is a **fork** of [weaviate/elysia](https://github.com/weaviate/elysia), customized for the Athena project. It's a decision-tree agentic RAG platform built with FastAPI, DSPy, and Weaviate. The fork adds Gemini model support, a RAG bypass mechanism (`DirectAnswer` tool), and ethical guardrails. See `CUSTOMIZATIONS.md` for all divergences from upstream.
+Elysia is a **fork** of [weaviate/elysia](https://github.com/weaviate/elysia), customized for the Atena project. It's a decision-tree agentic RAG platform built with FastAPI, DSPy, and Weaviate. The fork adds Gemini model support, a RAG bypass mechanism (`DirectAnswer` tool), and ethical guardrails. See `CUSTOMIZATIONS.md` for all divergences from upstream.
 
 ## Commands
 
@@ -61,7 +61,7 @@ Uses **black** for Python formatting.
 ### API Routes (prefix → module)
 `/init`, `/ws` (query + processor), `/collections`, `/user/config`, `/tree/config`, `/feedback`, `/util`, `/tools`, `/db`, `/api/health`
 
-## Athena-Specific Changes (High Merge-Conflict Risk)
+## Atena-Specific Changes (High Merge-Conflict Risk)
 - `elysia/config.py`: Custom `provider_to_models` entries for Gemini 3/2.5 and OpenRouter. Look for `[ATHENA-CUSTOM]` markers
 - `elysia/tree/util.py`: Modified decision node to handle `direct_answer` tool (no `message_update` for text responses)
 - `elysia/tools/text/direct_answer.py`: New tool (not in upstream)

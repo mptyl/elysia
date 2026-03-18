@@ -1,10 +1,10 @@
 # Environment
 
-The environment is a persistent object across all actions, tools and decisions performed within the Elysia decision tree. It can be used to store global information, such as retrieved objects or information that needs to be seen across all tools and actions.
+The environment is a persistent object across all actions, tools and decisions performed within the Atena decision tree. It can be used to store global information, such as retrieved objects or information that needs to be seen across all tools and actions.
 
 ## Overview
 
-The 'Environment' variable contains all objects returned from any tools called by the Elysia decision tree. In essence, it is a dictionary which is keyed by two variables:
+The 'Environment' variable contains all objects returned from any tools called by the Atena decision tree. In essence, it is a dictionary which is keyed by two variables:
 
 - `tool_name` (str): the name of the tool used to add this field to the environment
 - `name` (str): a subkey of `tool_name`, a unique `name` associated to the returns from that tool. E.g. a collection name from a retrieval.
@@ -16,7 +16,7 @@ And when these items are accessed, it is a *list of dictionaries*, where each di
 
 where each item in `objects` is a list of objects retrieved during the call of that tool. Each set of objects has its own corresponding metadata. 
 
-For example, if Elysia calls the 'Query' tool, then the `tool_name` is `"query"` and the `name` is the name of the collection queried. Each list of objects has metadata associated with the query used to retrieve the data. So each list of objects has unique metadata.
+For example, if Atena calls the 'Query' tool, then the `tool_name` is `"query"` and the `name` is the name of the collection queried. Each list of objects has metadata associated with the query used to retrieve the data. So each list of objects has unique metadata.
 
 <details closed>
 <summary>Environment Example</summary>
@@ -56,7 +56,7 @@ Below is an example of what the environment looks like, after the tools `query` 
     }
 }
 ```
-This is just an example and not exactly how the structure within Elysia's inbuilt query and aggregate tools behave (they have much more information and would be harder to follow).
+This is just an example and not exactly how the structure within Atena's inbuilt query and aggregate tools behave (they have much more information and would be harder to follow).
 
 Note the levels of indexing the environment. 
 - The outer most level is the tool name that yielded the result (`"query"` and `"aggregate"`).

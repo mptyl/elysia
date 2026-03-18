@@ -1,10 +1,10 @@
-# Brainstorming: tracciamento attività utenti e consumo token in Athena
+# Brainstorming: tracciamento attività utenti e consumo token in Atena
 
 ## Obiettivo
 
 Valutare la fattibilità di:
 
-- registrare l'attività di ogni utente su Athena
+- registrare l'attività di ogni utente su Atena
 - calcolare il consumo di token ogni volta che viene chiamato un LLM esterno
 - distinguere il consumo di token nelle seguenti categorie:
   - gestione della verifica etica
@@ -20,7 +20,7 @@ Per ogni consumo token si desidera registrare anche:
 
 ## Contesto emerso dal codice
 
-L'analisi del repository mostra che Athena usa il backend Elysia come orchestratore dei flussi LLM/RAG.
+L'analisi del repository mostra che Atena usa il backend Atena (fork di Elysia) come orchestratore dei flussi LLM/RAG.
 
 Punti rilevanti emersi:
 
@@ -45,7 +45,7 @@ Punti rilevanti emersi:
 
 La fattibilità è alta.
 
-Dal punto di vista tecnico, Athena ha già punti di aggancio sufficienti per intercettare e classificare le chiamate ai modelli esterni.
+Dal punto di vista tecnico, Atena ha già punti di aggancio sufficienti per intercettare e classificare le chiamate ai modelli esterni.
 
 Le tre categorie richieste sono distinguibili:
 
@@ -178,7 +178,7 @@ La richiesta è tecnicamente fattibile e il repository mostra già una struttura
 
 Conclusioni principali:
 
-- è possibile tracciare il consumo token per utente in Athena
+- è possibile tracciare il consumo token per utente in Atena
 - è possibile distinguere i consumi nelle tre categorie richieste
 - il guardrail etico e il direct answer sono già separati e quindi facilmente classificabili
 - il flusso RAG è distinguibile, ma va chiarito che Weaviate locale non consuma token LLM

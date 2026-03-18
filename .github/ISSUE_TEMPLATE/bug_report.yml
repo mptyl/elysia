@@ -12,8 +12,8 @@ body:
   - type: input
     id: environment
     attributes:
-      label: "Elysia version"
-      description: "Tell us your Elysia version. (You can find this out via `pip show elysia-ai` in your environment that you installed Elysia in.)"
+      label: "Atena version"
+      description: "Tell us your Atena version. (You can find this out via `pip show elysia-ai` in your environment that you installed Atena in.)"
     validations:
       required: true
 
@@ -21,7 +21,7 @@ body:
     id: installation_method
     attributes:
       label: "Installation method"
-      description: "How did you install Elysia? (e.g. pip, uv, conda, from source, etc.)"
+      description: "How did you install Atena? (e.g. pip, uv, conda, from source, etc.)"
       placeholder: "pip install elysia-ai"
     validations:
       required: true
@@ -29,11 +29,11 @@ body:
   - type: dropdown
     id: app_or_python
     attributes:
-      label: "Is the issue occurring in the Elysia package or the Elysia web app?"
-      description: "Please note that if your bug looks like a frontend problem (e.g. items not displaying, etc.), you might want to submit a bug report to the Elysia frontend repository instead: https://github.com/weaviate/elysia-frontend. However, if you are getting _errors_ in the app, then it is likely the backend and suited for here."
+      label: "Is the issue occurring in the Atena package or the Atena web app?"
+      description: "Please note that if your bug looks like a frontend problem (e.g. items not displaying, etc.), you might want to submit a bug report to the Atena frontend repository instead: https://github.com/weaviate/elysia-frontend. However, if you are getting _errors_ in the app, then it is likely the backend and suited for here."
       options:
-        - "Python package (running Elysia in python)"
-        - "Elysia web app (using the app via `elysia start`)"
+        - "Python package (running Atena in python)"
+        - "Atena web app (using the app via `elysia start`)"
         - "Both"
 
   - type: textarea

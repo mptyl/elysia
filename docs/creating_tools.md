@@ -1,6 +1,6 @@
 # Creating a Tool
 
-You can use the custom tool decorator within Elysia to very simply add a tool to the tree. For example:
+You can use the custom tool decorator within Atena to very simply add a tool to the tree. For example:
 
 ```python
 from elysia import tool
@@ -13,7 +13,7 @@ async def add(x: int, y: int) -> int:
     return x + y
 ```
 
-The docstring of the function serves as the tool description, and it's important this is as detailed as possible. This tool can be added to an Elysia `Tree` via
+The docstring of the function serves as the tool description, and it's important this is as detailed as possible. This tool can be added to an Atena `Tree` via
 
 ```python 
 from elysia import Tree
@@ -31,7 +31,7 @@ print(response)
 'I will calculate the sum for you using the add tool. The sum of 1238213 + 1238213 is 2476426.'
 ```
 
-And this is all you need to do to add a tool to Elysia! Some things to note:
+And this is all you need to do to add a tool to Atena! Some things to note:
 
 - Your tool must be an async function (must be defined via `async def` instead of `def`).
 - `tree.add_tool(add)` added this tool to the _root_ decision node (at the base of the tree). If you are using a tree with multiple branches, you can specify which branch it is added to via `tree.add_tool(add, branch_id=...)` where `...` should be replaced with the `branch_id`.
@@ -47,7 +47,7 @@ And this is all you need to do to add a tool to Elysia! Some things to note:
 
 ## More Detail
 
-Elysia works by adding objects to its internal environment. For example, when we called the `add` function above, it automatically added a `Result` type object to the Elysia tree environment. Any objects directly returned by the function will be added to the environment under a generic set of keys. To have more control over this, you can create your tool as an async generator function, which yields objects. For example, let's extend our basic calculator a bit further:
+Atena works by adding objects to its internal environment. For example, when we called the `add` function above, it automatically added a `Result` type object to the Atena tree environment. Any objects directly returned by the function will be added to the environment under a generic set of keys. To have more control over this, you can create your tool as an async generator function, which yields objects. For example, let's extend our basic calculator a bit further:
 
 ```python
 @tool
@@ -65,7 +65,7 @@ async def calculate_two_numbers(x: int, y: int):
 
 This now returns _two_ items to the decision tree, a string and a dictionary. There is no limit to the amount of objects you can yield. 
 
-When a string is returned, it automatically becomes a _response_ from Elysia, so it will be displayed to the user as if the agent is talking back to them. When any other type of item is yielded, it becomes a `Result` type object which means it becomes part of the tree's environment. Yielding or returning a dictionary means you can customise what specific object is added to the environment. Returning or yielding a list of dictionaries will add multiple objects to the `Result`. You can also return or yield one or more `Result` objects directly.
+When a string is returned, it automatically becomes a _response_ from Atena, so it will be displayed to the user as if the agent is talking back to them. When any other type of item is yielded, it becomes a `Result` type object which means it becomes part of the tree's environment. Yielding or returning a dictionary means you can customise what specific object is added to the environment. Returning or yielding a list of dictionaries will add multiple objects to the `Result`. You can also return or yield one or more `Result` objects directly.
 
 ## Assigning Inputs
 
@@ -95,7 +95,7 @@ Now the LLM should choose the operation in addition to the numbers. We also exte
 ## Advanced Features
 
 
-If your tool may error, then you can return or yield a custom Elysia `Error` object which will not cause a halt in the execution of the program. Instead, the error message will be logged in the decision tree for which the decision agent can judge whether the error is avoidable on another run of the tool. For example, if our decision agent tries to choose the wrong `operation` in the above `perform_mathematical_operations` tool, we can do something like this:
+If your tool may error, then you can return or yield a custom Atena `Error` object which will not cause a halt in the execution of the program. Instead, the error message will be logged in the decision tree for which the decision agent can judge whether the error is avoidable on another run of the tool. For example, if our decision agent tries to choose the wrong `operation` in the above `perform_mathematical_operations` tool, we can do something like this:
 ```python
 from elysia import Error
 @tool
@@ -118,12 +118,12 @@ async def perform_mathematical_operations(numbers: list[int | float], operation:
     yield f"I just performed a {operation} on {numbers}."    
 ```
 
-Finally, tools can interact with Elysia's environment, LMs and the Weaviate client through specific inputs to the function. To use the [`TreeData` class](Reference/Objects.md#elysia.tree.objects.TreeData), you can use the argument `tree_data` in the function signature (for which you can access the [Elysia environment](Advanced/environment.md)). Likewise, for the base LM you can use `base_lm`, for the complex LM you can use `complex_lm` and for the [Client Manager](Reference/Client.md) you can use `client_manager`. For example:
+Finally, tools can interact with Atena's environment, LMs and the Weaviate client through specific inputs to the function. To use the [`TreeData` class](Reference/Objects.md#elysia.tree.objects.TreeData), you can use the argument `tree_data` in the function signature (for which you can access the [Atena environment](Advanced/environment.md)). Likewise, for the base LM you can use `base_lm`, for the complex LM you can use `complex_lm` and for the [Client Manager](Reference/Client.md) you can use `client_manager`. For example:
 
 ```python
 @tool
 async def some_tool(
-    tree_data, base_lm, complex_lm, client_manager, # these inputs are automatically assigned as Elysia variables
+    tree_data, base_lm, complex_lm, client_manager, # these inputs are automatically assigned as Atena variables
     x: str, y: int # these inputs are not assigned automatically and get assigned by the decision agent
 ):
     # do something
@@ -165,4 +165,4 @@ settings.configure(
     }
 )
 ```
-The `MY_API_KEY` will then accessible from `os.environ`. Or, in the Elysia web app, within your API keys section of the config.
+The `MY_API_KEY` will then accessible from `os.environ`. Or, in the Atena web app, within your API keys section of the config.

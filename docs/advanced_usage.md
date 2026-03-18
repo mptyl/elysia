@@ -1,4 +1,4 @@
-# Customising the Elysia Decision Tree
+# Customising the Atena Decision Tree
 
 If you haven't followed [the basic guide](basic.md) yet, check that out first before you go into more detail here.
 
@@ -19,16 +19,16 @@ Each of these options is described below.
 
 ### Style
 
-You can customise the style of Elysia's text responses by either initialising the decision tree with the `style` argument, 
+You can customise the style of Atena's text responses by either initialising the decision tree with the `style` argument, 
 or creating a tree and then modifying the style later.
 ```python
 tree = Tree()
 tree.change_style("Always speak in rhyming couplets.")
 ```
 
-You should see the changes in Elysia's textual responses!
+You should see the changes in Atena's textual responses!
 ```python
-response, _ = tree("Hi Elysia, how are you?")
+response, _ = tree("Hi Atena, how are you?")
 print(response)
 ```
 ```
@@ -38,7 +38,7 @@ print(response)
 
 ### Agent Description
 
-The `agent_description` parameter in Elysia assigns the agent a unique identity, which you can use to customise the objective of the agent. 
+The `agent_description` parameter in Atena assigns the agent a unique identity, which you can use to customise the objective of the agent. 
 
 Change this via `change_agent_description`, e.g.
 ```python
@@ -47,7 +47,7 @@ tree.change_agent_description("You are a travel agent, specialised in creating u
 
 ### End Goal
 
-The `end_goal` parameter describes to Elysia what criteria it will use to decide when the decision tree should end. Normally, this is something similar to 'When you have either achieved all the user has asked of you, or you can no longer do any actions that have not failed already, and you have no other options to explore.'. But this could be unique to your use case, for example,
+The `end_goal` parameter describes to Atena what criteria it will use to decide when the decision tree should end. Normally, this is something similar to 'When you have either achieved all the user has asked of you, or you can no longer do any actions that have not failed already, and you have no other options to explore.'. But this could be unique to your use case, for example,
 ```python
 tree.change_end_goal("The user has been recommended a hotel, travel options as well as activities to do in the local area. Or, you have exhausted all options. Or, you have asked the user for more clarification about their request.")
 ```

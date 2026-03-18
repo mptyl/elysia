@@ -2,7 +2,7 @@
 
 ## Panoramica
 
-`UserManager` (`elysia/api/services/user.py`) è il **gestore centralizzato di sessioni utente** nel backend Elysia. È implementato come singleton che mantiene in memoria lo stato per ogni utente connesso, isolando le loro conversazioni, configurazioni e connessioni Weaviate.
+`UserManager` (`elysia/api/services/user.py`) è il **gestore centralizzato di sessioni utente** nel backend Atena. È implementato come singleton che mantiene in memoria lo stato per ogni utente connesso, isolando le loro conversazioni, configurazioni e connessioni Weaviate.
 
 ## Architettura
 

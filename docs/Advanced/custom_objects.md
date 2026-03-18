@@ -26,9 +26,9 @@ yield Result(
 
 **Objects**
 
-The `Result` class stores `objects`, which are a list of dictionaries containing anything that should be added to the environment or sent to the frontend. These can be stored however you like, but an Elysia-aware frontend expects the objects to have a certain format - the fields of the dictionaries need to be specific to the type of object being sent.
+The `Result` class stores `objects`, which are a list of dictionaries containing anything that should be added to the environment or sent to the frontend. These can be stored however you like, but an Atena-aware frontend expects the objects to have a certain format - the fields of the dictionaries need to be specific to the type of object being sent.
 
-For example, an Elysia frontend knows what the payload of a 'document' object should be, and there are fields such as `'title'`, `'content'` and `'author'` which it expects. But the objects returned from a retrieval might not have the fields line up exactly like this - maybe it has fields called `'document_header'`, `'text_content'` and `'writer'` instead.
+For example, an Atena frontend knows what the payload of a 'document' object should be, and there are fields such as `'title'`, `'content'` and `'author'` which it expects. But the objects returned from a retrieval might not have the fields line up exactly like this - maybe it has fields called `'document_header'`, `'text_content'` and `'writer'` instead.
 
 **Metadata**
 
@@ -36,7 +36,7 @@ Results also can have metadata attached to them, which is a single dictionary th
 
 **Payload Type**
 
-The `payload_type` parameter is used to tell the frontend what to expect. Within Elysia, there are some predefined types ([see here](../Reference/PayloadTypes.md)) that the built-in frontend is aware of. However, you can specify your own payload types if you are building a different frontend that is aware of different payload types.
+The `payload_type` parameter is used to tell the frontend what to expect. Within Atena, there are some predefined types ([see here](../Reference/PayloadTypes.md)) that the built-in frontend is aware of. However, you can specify your own payload types if you are building a different frontend that is aware of different payload types.
 
 **Mapping**
 
