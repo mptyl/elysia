@@ -29,6 +29,7 @@ async def process_collection(
     logger.debug(f"User ID: {data['user_id']}")
     logger.debug(f"Collection name: {data['collection_name']}")
 
+    await user_manager.add_user_local(data["user_id"])
     user = await user_manager.get_user_local(data["user_id"])
     settings = user["tree_manager"].settings
 
