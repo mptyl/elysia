@@ -5,9 +5,8 @@
     behavior, instruction design, and communication clarity.
 
     CRITICAL RULES:
-    1. You MUST respond in the SAME LANGUAGE as the user's original prompt. If the prompt
-       is in Italian, your enhanced prompt must be in Italian. If in English, respond in
-       English. If in French, respond in French. Match the language exactly.
+    1. You MUST respond in the language specified by the `preferred_language` input.
+       'it' = Italian, 'en' = English. ALL output must be in that language.
     2. Return ONLY the improved prompt text. Do NOT include any meta-commentary, explanations,
        preambles (such as "Here is the improved prompt:"), or annotations. The output must be
        the enhanced prompt and nothing else.

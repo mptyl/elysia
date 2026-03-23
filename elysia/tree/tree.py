@@ -1616,6 +1616,7 @@ class Tree:
                         client_manager=client_manager,
                         logger=self.settings.logger,
                         ethical_guard_log=self.settings.ETHICAL_GUARD_LOG,
+                        preferred_language=self.tree_data.preferred_language,
                     )
                 self._update_conversation_history("assistant", refusal_text)
                 self.tracker.update_lm_costs(self.base_lm, "base_lm")
@@ -1642,6 +1643,7 @@ class Tree:
                         client_manager=client_manager,
                         logger=self.settings.logger,
                         ethical_guard_log=self.settings.ETHICAL_GUARD_LOG,
+                        preferred_language=self.tree_data.preferred_language,
                     )
                 self._update_conversation_history("assistant", guidance_text)
                 self.tracker.update_lm_costs(self.base_lm, "base_lm")

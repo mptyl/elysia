@@ -41,7 +41,7 @@ def _get_prompt(name: str) -> str:
 
 
 class PromptEnhancerSignature(dspy.Signature):
-    """You are an expert prompt engineer. Transform the user's raw prompt into a well-structured, effective prompt following the enhancement guidelines. Return ONLY the improved prompt text, no explanations or meta-commentary. Respond in the SAME LANGUAGE as the user's prompt."""
+    """You are an expert prompt engineer. Transform the user's raw prompt into a well-structured, effective prompt following the enhancement guidelines. Return ONLY the improved prompt text, no explanations or meta-commentary. Respond in the language specified by `preferred_language` ('it' = Italian, 'en' = English)."""
 
     raw_prompt: str = dspy.InputField(
         desc="The user's original prompt to enhance"
@@ -49,14 +49,17 @@ class PromptEnhancerSignature(dspy.Signature):
     enhancement_guidelines: str = dspy.InputField(
         desc="XML guidelines for prompt enhancement best practices"
     )
+    preferred_language: str = dspy.InputField(
+        desc="The user's preferred language ('it' = Italian, 'en' = English)."
+    )
 
     enhanced_prompt: str = dspy.OutputField(
-        desc="The improved, well-structured prompt. Must be in the same language as the raw_prompt. Contains ONLY the enhanced prompt text, no explanations."
+        desc="The improved, well-structured prompt. Must be in the preferred_language. Contains ONLY the enhanced prompt text, no explanations."
     )
 
 
 class PromptRefinementSignature(dspy.Signature):
-    """You are an expert prompt engineer. First, validate whether the user's suggestion is a valid, actionable refinement request using the validation criteria. If valid, apply the suggestion to refine the current prompt following the enhancement guidelines. If invalid, provide helpful feedback. Respond in the SAME LANGUAGE as the user's input."""
+    """You are an expert prompt engineer. First, validate whether the user's suggestion is a valid, actionable refinement request using the validation criteria. If valid, apply the suggestion to refine the current prompt following the enhancement guidelines. If invalid, provide helpful feedback. Respond in the language specified by `preferred_language` ('it' = Italian, 'en' = English)."""
 
     current_prompt: str = dspy.InputField(
         desc="The current version of the prompt to refine"
@@ -70,6 +73,9 @@ class PromptRefinementSignature(dspy.Signature):
     validation_criteria: str = dspy.InputField(
         desc="XML criteria for validating whether the suggestion is actionable"
     )
+    preferred_language: str = dspy.InputField(
+        desc="The user's preferred language ('it' = Italian, 'en' = English)."
+    )
 
     is_valid_suggestion: bool = dspy.OutputField(
         desc="True if the suggestion is a valid, actionable refinement request"
@@ -78,14 +84,14 @@ class PromptRefinementSignature(dspy.Signature):
         desc="The refined prompt if suggestion is valid, empty string if invalid"
     )
     feedback: str = dspy.OutputField(
-        desc="Helpful feedback if suggestion is invalid, empty string if valid. Must be in the same language as user_suggestion."
+        desc="Helpful feedback if suggestion is invalid, empty string if valid. Must be in the preferred_language."
     )
 
 
 # --- Core functions ---
 
 
-async def enhance_prompt(raw_prompt: str, lm: dspy.LM) -> dict:
+async def enhance_prompt(raw_prompt: str, lm: dspy.LM, preferred_language: str = "it") -> dict:
     """First iteration: transform raw prompt into enhanced version."""
     enhancement_guidelines = _get_prompt("enhancement_system")
 
@@ -94,6 +100,7 @@ async def enhance_prompt(raw_prompt: str, lm: dspy.LM) -> dict:
             result = dspy.Predict(PromptEnhancerSignature)(
                 raw_prompt=raw_prompt,
                 enhancement_guidelines=enhancement_guidelines,
+                preferred_language=preferred_language,
             )
         return {"enhanced_prompt": result.enhanced_prompt, "feedback": "", "error": ""}
     except Exception as e:
@@ -101,7 +108,7 @@ async def enhance_prompt(raw_prompt: str, lm: dspy.LM) -> dict:
         return {"enhanced_prompt": "", "feedback": "", "error": str(e)}
 
 
-async def refine_prompt(current_prompt: str, suggestion: str, lm: dspy.LM) -> dict:
+async def refine_prompt(current_prompt: str, suggestion: str, lm: dspy.LM, preferred_language: str = "it") -> dict:
     """Subsequent iterations: validate suggestion then refine."""
     enhancement_guidelines = _get_prompt("enhancement_system")
     validation_criteria = _get_prompt("validation_criteria")
@@ -113,6 +120,7 @@ async def refine_prompt(current_prompt: str, suggestion: str, lm: dspy.LM) -> di
                 user_suggestion=suggestion,
                 enhancement_guidelines=enhancement_guidelines,
                 validation_criteria=validation_criteria,
+                preferred_language=preferred_language,
             )
         if result.is_valid_suggestion:
             return {"enhanced_prompt": result.enhanced_prompt, "feedback": "", "error": ""}

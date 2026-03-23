@@ -19,11 +19,12 @@ async def test_initialise_tree_populates_profile_system_prompt():
     with patch(
         "elysia.api.services.user.fetch_and_build_profile_prompt",
         new_callable=AsyncMock,
-        return_value=fake_profile_prompt,
+        return_value=(fake_profile_prompt, "it"),
     ):
         user_manager = UserManager()
         tree = await user_manager.initialise_tree(user_id, conversation_id, low_memory=True)
         assert tree.tree_data.profile_system_prompt == fake_profile_prompt
+        assert tree.tree_data.preferred_language == "it"
 
 
 @pytest.mark.asyncio
@@ -34,7 +35,7 @@ async def test_initialise_tree_caches_profile_across_conversations():
     conv_2 = f"test_{uuid4()}"
     fake_profile_prompt = "<profile-system-prompt>cached</profile-system-prompt>"
 
-    mock_fetch = AsyncMock(return_value=fake_profile_prompt)
+    mock_fetch = AsyncMock(return_value=(fake_profile_prompt, "en"))
 
     with patch(
         "elysia.api.services.user.fetch_and_build_profile_prompt",
@@ -46,6 +47,8 @@ async def test_initialise_tree_caches_profile_across_conversations():
 
         assert tree1.tree_data.profile_system_prompt == fake_profile_prompt
         assert tree2.tree_data.profile_system_prompt == fake_profile_prompt
+        assert tree1.tree_data.preferred_language == "en"
+        assert tree2.tree_data.preferred_language == "en"
         # Should only fetch once (cached at user level)
         assert mock_fetch.call_count == 1
 
@@ -59,11 +62,12 @@ async def test_initialise_tree_graceful_degradation():
     with patch(
         "elysia.api.services.user.fetch_and_build_profile_prompt",
         new_callable=AsyncMock,
-        return_value="",
+        return_value=("", "it"),
     ):
         user_manager = UserManager()
         tree = await user_manager.initialise_tree(user_id, conversation_id, low_memory=True)
         assert tree.tree_data.profile_system_prompt == ""
+        assert tree.tree_data.preferred_language == "it"
 
 
 @pytest.mark.asyncio
@@ -80,6 +84,7 @@ async def test_initialise_tree_handles_fetch_exception():
         user_manager = UserManager()
         tree = await user_manager.initialise_tree(user_id, conversation_id, low_memory=True)
         assert tree.tree_data.profile_system_prompt == ""
+        assert tree.tree_data.preferred_language == "it"
 
 
 # --- Source-level checks: verify profile_context is used in all LLM-calling components ---

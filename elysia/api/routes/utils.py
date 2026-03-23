@@ -288,10 +288,13 @@ async def enhance_prompt_endpoint(
                 status_code=200,
             )
 
+        # Get preferred_language from cached user profile
+        preferred_language = local_user.get("preferred_language", "it")
+
         if data.prompt is None or data.prompt.strip() == "":
-            result = await enhance_prompt(data.suggestion, base_lm)
+            result = await enhance_prompt(data.suggestion, base_lm, preferred_language)
         else:
-            result = await refine_prompt(data.prompt, data.suggestion, base_lm)
+            result = await refine_prompt(data.prompt, data.suggestion, base_lm, preferred_language)
 
         return JSONResponse(content=result, status_code=200)
 

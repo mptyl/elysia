@@ -275,6 +275,20 @@ class ElysiaChainOfThought(Module):
                 name="profile_context", field=profile_context_field, type_=str
             )
 
+        # -- Preferred Language Input --
+        preferred_language_desc = (
+            "The user's preferred language for responses. "
+            "You MUST produce ALL output (reasoning, text, summaries, messages) in this language. "
+            "Values: 'it' = Italian, 'en' = English."
+        )
+        preferred_language_prefix = "${preferred_language}"
+        preferred_language_field: str = dspy.InputField(
+            prefix=preferred_language_prefix, desc=preferred_language_desc
+        )
+        extended_signature = extended_signature.append(
+            name="preferred_language", field=preferred_language_field, type_=str
+        )
+
         # -- Impossible Field --
         if impossible:
             impossible_desc = (
@@ -363,6 +377,8 @@ class ElysiaChainOfThought(Module):
 
         if self.profile_context:
             kwargs["profile_context"] = self.tree_data.profile_system_prompt
+
+        kwargs["preferred_language"] = self.tree_data.preferred_language
 
         return kwargs
 

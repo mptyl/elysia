@@ -634,6 +634,9 @@ class TreeData:
         # -- Profile System Prompt (populated at session init by UserManager) --
         self.profile_system_prompt: str = ""
 
+        # -- Preferred language for LLM responses (populated at session init by UserManager) --
+        self.preferred_language: str = "it"
+
         # -- Atlas --
         self.atlas = atlas
 

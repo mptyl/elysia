@@ -33,11 +33,25 @@ async def process_collection(
     user = await user_manager.get_user_local(data["user_id"])
     settings = user["tree_manager"].settings
 
+    # Get user's preferred language for prompt generation
+    if "preferred_language" in user:
+        language = user["preferred_language"]
+    else:
+        from elysia.profile_prompt.profile_prompt import fetch_and_build_profile_prompt
+        try:
+            _, language = await fetch_and_build_profile_prompt(
+                data["user_id"], settings
+            )
+            user["preferred_language"] = language
+        except Exception:
+            language = "it"
+
     async for result in preprocess_async(
         collection_name=data["collection_name"],
         client_manager=user["client_manager"],
         force=True,
         settings=settings,
+        language=language,
     ):
         try:
             logger.debug(

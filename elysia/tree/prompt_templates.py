@@ -150,6 +150,10 @@ class FollowUpSuggestionsPrompt(dspy.Signature):
     Generate questions that showcase system capabilities and maintain user interest.
     Questions should be fun, creative, and designed to impress.
 
+    CRITICAL LANGUAGE RULE:
+    - You MUST generate ALL follow-up questions in the language specified by `preferred_language` ('it' = Italian, 'en' = English).
+    - NEVER mix languages in the suggestions.
+
     Since you are suggesting _follow-up_ questions, you should not suggest questions that are too similar to the user's prompt.
     Instead, try to think of something that can connect different data sources together, or provide new insights that the user may not have thought of.
     These should be fully formed questions, that you think the system is capable of answering, that the user would be interested in, and that show off the system's capabilities.
@@ -226,12 +230,17 @@ class FollowUpSuggestionsPrompt(dspy.Signature):
         description="The number of follow-up questions to suggest.",
         format=int,
     )
+    preferred_language: str = dspy.InputField(
+        description="The language for the follow-up questions ('it' = Italian, 'en' = English).",
+        format=str,
+    )
     suggestions: list[str] = dspy.OutputField(
         description=(
             "A list of follow up questions to the user's prompt. "
             "These should be punctual, short, around 10 words or so. "
-            "This should be a list of questions of size `num_suggestions`."
-            "Try to mix up the vocabulary and type of question between them."
+            "This should be a list of questions of size `num_suggestions`. "
+            "Try to mix up the vocabulary and type of question between them. "
+            "ALL questions MUST be in the preferred_language."
         ),
         format=list,
     )

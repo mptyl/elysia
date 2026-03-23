@@ -250,11 +250,13 @@ async def _suggest_prompts(
     example_objects: list[dict],
     settings: Settings,
     lm: dspy.LM,
+    language: str = "it",
 ) -> list[str]:
     with ElysiaKeyManager(settings):
         prediction = await prompt_suggestor_prompt.aforward(
             collection_information=collection_information,
             example_objects=example_objects,
+            language=language,
             lm=lm,
         )
     return prediction.prompt_suggestions
@@ -377,6 +379,7 @@ async def preprocess_async(
     force: bool = False,
     percentage_correct_threshold: float = 0.3,
     settings: Settings = environment_settings,
+    language: str = "it",
 ) -> AsyncGenerator[dict, None]:
     """
     Preprocess a collection, obtain a LLM-generated summary of the collection,
@@ -554,6 +557,7 @@ async def preprocess_async(
             subset_objects,
             settings,
             lm,
+            language=language,
         )
 
         yield await process_update(

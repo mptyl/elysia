@@ -673,6 +673,7 @@ async def get_follow_up_suggestions(
         old_suggestions=current_suggestions,
         context=context,
         num_suggestions=num_suggestions,
+        preferred_language=tree_data.preferred_language,
         lm=lm,
     )
 
