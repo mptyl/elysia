@@ -250,6 +250,7 @@ async def collections_list(
 
             # [ATHENA-CUSTOM] Serve prompts in user's preferred language
             preferred_language = user_local.get("preferred_language", "it")
+            logger.debug(f"[COLLECTIONS] Serving prompts in language: {preferred_language}")
             for item in metadata:
                 lang_key = f"prompts_{preferred_language}"
                 if item.get(lang_key):

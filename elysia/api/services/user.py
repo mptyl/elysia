@@ -187,6 +187,24 @@ class UserManager:
                 settings=self.users[user_id]["tree_manager"].config.settings,
             )
 
+            # [ATHENA-CUSTOM] Fetch preferred_language early so it's available
+            # for endpoints like /collections that run before initialise_tree.
+            # Only set preferred_language here (not profile_system_prompt) so
+            # initialise_tree can still do its full profile setup later.
+            try:
+                from elysia.util.supabase_client import fetch_user_profile
+                _settings = self.users[user_id]["tree_manager"].config.settings
+                profile = await fetch_user_profile(
+                    user_id,
+                    getattr(_settings, "SUPABASE_URL", ""),
+                    getattr(_settings, "SUPABASE_SERVICE_ROLE_KEY", ""),
+                )
+                self.users[user_id]["preferred_language"] = (
+                    profile.get("preferred_language", "it") if profile else "it"
+                )
+            except Exception:
+                self.users[user_id]["preferred_language"] = "it"
+
     async def get_user_local(self, user_id: str):
         """
         Return a local user object.
