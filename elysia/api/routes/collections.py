@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 
 from elysia.api.api_types import (
@@ -64,7 +64,9 @@ async def mapping_types():
 
 @router.get("/{user_id}/list")
 async def collections_list(
-    user_id: str, user_manager: UserManager = Depends(get_user_manager)
+    user_id: str,
+    lang: str | None = Query(None, description="Override preferred language for prompts (it/en)"),
+    user_manager: UserManager = Depends(get_user_manager),
 ):
     """
     Retrieve a list of collections from the currently connected Weaviate cluster for the user.
@@ -249,7 +251,9 @@ async def collections_list(
                     )
 
             # [ATHENA-CUSTOM] Serve prompts in user's preferred language
-            preferred_language = user_local.get("preferred_language", "it")
+            # Use explicit lang param if provided (frontend always sends it),
+            # otherwise fall back to cached user preference
+            preferred_language = lang or user_local.get("preferred_language", "it")
             logger.debug(f"[COLLECTIONS] Serving prompts in language: {preferred_language}")
             for item in metadata:
                 lang_key = f"prompts_{preferred_language}"
