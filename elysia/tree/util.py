@@ -276,7 +276,7 @@ class DecisionNode:
         next: "DecisionNode | None" = None,
     ):
         if status == "":
-            status = f"Running {id}..."
+            status = f"status.running:{id}"
 
         self.options[id] = {
             "description": description,  # type: str

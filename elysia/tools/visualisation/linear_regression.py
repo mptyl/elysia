@@ -20,7 +20,7 @@ class BasicLinearRegression(Tool):
             Use this tool to perform linear regression between two numeric variables in the environment.
             This also returns a visualisation of the data.
             """,
-            status="Running linear regression...",
+            status="status.runningLinearRegression",
             inputs={
                 "environment_key": {
                     "description": (

@@ -19,7 +19,7 @@ class DirectAnswer(Tool):
 
             This tool handles the selection of the appropriate model (Base vs Complex) automatically.
             """,
-            status="Thinking...",
+            status="status.thinking",
             inputs={},
             end=True,
         )

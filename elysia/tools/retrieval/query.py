@@ -59,7 +59,7 @@ class Query(Tool):
             Retrieving and displaying specific data entries rather than performing calculations or summaries.
             Do not use 'query' as a preliminary filtering step when 'aggregate' can achieve the same result more efficiently (if 'aggregate' is available).
             """,
-            status="Querying...",
+            status="status.querying",
             inputs={
                 "collection_names": {
                     "description": "the names of the collections that are most relevant to the query. If you are unsure, give all collections.",

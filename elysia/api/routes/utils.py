@@ -278,11 +278,9 @@ async def enhance_prompt_endpoint(
             return JSONResponse(
                 content={
                     "enhanced_prompt": "",
-                    "feedback": (
-                        "Non è possibile migliorare questo prompt in quanto il suo contenuto "
-                        "risulta in contrasto con i principi etici aziendali"
-                        f" (categoria: {violated_category})."
-                    ),
+                    "feedback": "",
+                    "feedback_key": "ethicalGuard.blocked",
+                    "feedback_params": {"category": violated_category},
                     "error": "",
                 },
                 status_code=200,

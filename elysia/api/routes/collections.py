@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-import dspy
-
 from elysia.api.api_types import (
     ViewPaginatedCollectionData,
     UpdateCollectionMetadataData,
@@ -22,62 +20,10 @@ from elysia.preprocessing.collection import (
 )
 from elysia.util.return_types import specific_return_types, types_dict, all_return_types
 from elysia.util.client import ClientManager
-from elysia.config import load_base_lm, ElysiaKeyManager
-
 from weaviate.classes.query import Filter
 
 
 router = APIRouter()
-
-# --- Prompt translation for initial suggestions ---
-
-# In-memory cache: { (collection_name, target_lang): [translated_prompts] }
-_prompt_translation_cache: dict[tuple[str, str], list[str]] = {}
-
-
-class _TranslatePromptsSignature(dspy.Signature):
-    """Translate a list of short questions into the target language.
-    Keep the same meaning and similar length. Return ONLY the translated questions."""
-
-    prompts: list[str] = dspy.InputField(desc="List of short questions to translate.")
-    target_language: str = dspy.InputField(
-        desc="Target language code: 'it' = Italian, 'en' = English."
-    )
-    translated_prompts: list[str] = dspy.OutputField(
-        desc="The translated questions, same order and count as input."
-    )
-
-
-async def _translate_prompts(
-    prompts: list[str],
-    target_lang: str,
-    collection_name: str,
-    settings,
-) -> list[str]:
-    """Translate prompts to target language with in-memory caching. Fail-open."""
-    if not prompts:
-        return prompts
-
-    cache_key = (collection_name, target_lang)
-    if cache_key in _prompt_translation_cache:
-        return _prompt_translation_cache[cache_key]
-
-    try:
-        lm = load_base_lm(settings)
-        with ElysiaKeyManager(settings):
-            result = await dspy.Predict(_TranslatePromptsSignature).aforward(
-                prompts=prompts,
-                target_language=target_lang,
-                lm=lm,
-            )
-        translated = result.translated_prompts
-        if isinstance(translated, list) and len(translated) == len(prompts):
-            _prompt_translation_cache[cache_key] = translated
-            return translated
-    except Exception as e:
-        logger.warning(f"[COLLECTIONS] Prompt translation failed: {e}")
-
-    return prompts
 
 
 @router.get("/mapping_types")
@@ -180,12 +126,15 @@ async def collections_list(
                     processed_collection.properties["name"]
                     for processed_collection in processed_collections.objects
                 ]
-                processed_collections_prompts = {
-                    processed_collection.properties[
-                        "name"
-                    ]: processed_collection.properties["prompts"]
-                    for processed_collection in processed_collections.objects
-                }
+                processed_collections_prompts = {}
+                for processed_collection in processed_collections.objects:
+                    cname = processed_collection.properties["name"]
+                    props = processed_collection.properties
+                    processed_collections_prompts[cname] = {
+                        "prompts": props.get("prompts", []),
+                        "prompts_it": props.get("prompts_it", []),
+                        "prompts_en": props.get("prompts_en", []),
+                    }
             else:
                 processed_collection_names = []
                 processed_collections_prompts = {}
@@ -212,9 +161,14 @@ async def collections_list(
                     processed = collection_name in processed_collection_names
 
                     if processed:
-                        prompts = processed_collections_prompts[collection_name]
+                        prompt_data = processed_collections_prompts[collection_name]
+                        prompts = prompt_data.get("prompts", [])
+                        prompts_it = prompt_data.get("prompts_it", [])
+                        prompts_en = prompt_data.get("prompts_en", [])
                     else:
                         prompts = []
+                        prompts_it = []
+                        prompts_en = []
 
                     vector_config = {"fields": {}, "global": {}}
                     if config.vector_config:
@@ -278,6 +232,8 @@ async def collections_list(
                             "processed": processed,
                             "error": False,
                             "prompts": prompts,
+                            "prompts_it": prompts_it,
+                            "prompts_en": prompts_en,
                         }
                     )
                 except Exception as e:
@@ -292,18 +248,15 @@ async def collections_list(
                         }
                     )
 
-            # [ATHENA-CUSTOM] Translate prompts to user's preferred language
+            # [ATHENA-CUSTOM] Serve prompts in user's preferred language
             preferred_language = user_local.get("preferred_language", "it")
-            if preferred_language != "en":
-                settings = user_local["tree_manager"].config.settings
-                for item in metadata:
-                    if item.get("prompts"):
-                        item["prompts"] = await _translate_prompts(
-                            prompts=item["prompts"],
-                            target_lang=preferred_language,
-                            collection_name=item["name"],
-                            settings=settings,
-                        )
+            for item in metadata:
+                lang_key = f"prompts_{preferred_language}"
+                if item.get(lang_key):
+                    item["prompts"] = item[lang_key]
+                # Clean up internal fields — only send "prompts" to frontend
+                item.pop("prompts_it", None)
+                item.pop("prompts_en", None)
 
             return JSONResponse(
                 content={"collections": metadata, "error": ""},

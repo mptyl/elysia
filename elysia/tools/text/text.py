@@ -31,7 +31,7 @@ class CitedSummarizer(Tool):
             Most of the time, you can choose end_actions to be True to end the conversation with a summary.
             This is a good way to end the conversation.
             """,
-            status="Summarizing...",
+            status="status.summarizing",
             inputs={},
             end=True,
         )
@@ -89,7 +89,7 @@ class Summarizer(Tool):
             Most of the time, you can choose end_actions to be True to end the conversation with a summary.
             This is a good way to end the conversation.
             """,
-            status="Summarizing...",
+            status="status.summarizing",
             inputs={},
             end=True,
         )
@@ -135,7 +135,7 @@ class TextResponse(Tool):
         super().__init__(
             name="final_text_response",
             description="",
-            status="Writing response...",
+            status="status.writingResponse",
             inputs={},
             end=True,
         )
@@ -179,7 +179,7 @@ class FakeTextResponse(Tool):
             If there are no collections available, the user needs to analyze this in the 'data' tab.
             If there are other problems, and it looks like the user can fix it, then provide a suggestion.
             """,
-            status="Writing response...",
+            status="status.writingResponse",
             inputs={
                 "text": {
                     "type": str,

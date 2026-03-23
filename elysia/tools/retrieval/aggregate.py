@@ -45,7 +45,7 @@ class Aggregate(Tool):
             'aggregate' should be considered the first choice for tasks involving counting, summing, averaging, 
             or other statistical operations, even when filtering is required.
             """,
-            status="Aggregating...",
+            status="status.aggregating",
             inputs={
                 "collection_names": {
                     "description": "the names of the collections that are most relevant to the aggregation. If you are unsure, give all collections.",

@@ -417,7 +417,7 @@ async def preprocess_async(
 
     lm = load_base_lm(settings)
     logger = settings.logger
-    process_update = ProcessUpdate(collection_name, len(rt.specific_return_types) + 5)
+    process_update = ProcessUpdate(collection_name, len(rt.specific_return_types) + 6)
 
     if client_manager is None:
         client_manager = ClientManager(
@@ -550,15 +550,25 @@ async def preprocess_async(
         )
         process_update.update_total(len(return_types) + 5)
 
-        # suggest prompts
-        out["prompts"] = await _suggest_prompts(
+        # suggest prompts in both languages
+        out["prompts_it"] = await _suggest_prompts(
             prompt_suggestor_prompt,
             out,
             subset_objects,
             settings,
             lm,
-            language=language,
+            language="it",
         )
+        out["prompts_en"] = await _suggest_prompts(
+            prompt_suggestor_prompt,
+            out,
+            subset_objects,
+            settings,
+            lm,
+            language="en",
+        )
+        # backward compatibility: default prompts field
+        out["prompts"] = out["prompts_it"]
 
         yield await process_update(
             message="Created suggestions for prompts",

@@ -27,7 +27,7 @@ class Visualise(Tool):
                 "You can only visualise data that is in the environment. "
                 "If there is nothing relevant in the environment, do not choose this tool."
             ),
-            status="Visualising...",
+            status="status.visualising",
             end=True,
             inputs={
                 "chart_type": {
