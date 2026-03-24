@@ -4,7 +4,6 @@ from elysia.tree.objects import TreeData
 from elysia.util.client import ClientManager
 from elysia.util.elysia_chain_of_thought import ElysiaChainOfThought
 from elysia.tools.text.prompt_templates import TextResponsePrompt, ComplexityScope
-from elysia.profile_prompt import fetch_and_build_profile_prompt
 
 class DirectAnswer(Tool):
     def __init__(self, **kwargs):
@@ -68,18 +67,10 @@ class DirectAnswer(Tool):
         else:
             target_lm = complex_lm
 
-        # 3. [ATHENA-CUSTOM] Fetch and build profile-based system prompt
-        has_profile_context = False
-        user_id = getattr(tree_data, "user_id", None)
-        settings = getattr(tree_data, "settings", None)
-        if user_id and settings:
-            profile_prompt = await fetch_and_build_profile_prompt(user_id, settings)
-            if profile_prompt:
-                tree_data.profile_system_prompt = profile_prompt
-                has_profile_context = True
+        # 3. [ATHENA-CUSTOM] Profile context is pre-populated in TreeData by UserManager
+        has_profile_context = bool(tree_data.profile_system_prompt)
 
         # 4. Generate Response
-        # We use ElysiaChainOfThought passing environment=False so it doesn't try to inject RAG context
         text_response_generator = ElysiaChainOfThought(
             TextResponsePrompt,
             tree_data=tree_data,

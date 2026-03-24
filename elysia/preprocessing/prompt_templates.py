@@ -206,6 +206,10 @@ class PromptSuggestorPrompt(dspy.Signature):
     example_objects: list[dict] = dspy.InputField(
         desc="Example objects to help you understand the data.", format=list[dict]
     )
+    language: str = dspy.InputField(
+        desc="The language in which prompts must be written (e.g. 'it' for Italian, 'en' for English).",
+        format=str,
+    )
 
     prompt_suggestions: list[str] = dspy.OutputField(
         desc="""
@@ -219,5 +223,6 @@ class PromptSuggestorPrompt(dspy.Signature):
         Look for interactions between the fields, and connections that the user may not see themselves.
         Produce 10 questions.
         The prompts should either: specifically reference the collection, or be specific enough to the data that at a glance someone would recognise the data.
+        CRITICAL: ALL prompts MUST be written in the language specified by the 'language' input field.
         """
     )

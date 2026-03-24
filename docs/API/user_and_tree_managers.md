@@ -1,6 +1,6 @@
 # User Manager and Tree Manager
 
-There exist two manager classes in Elysia designed to help structure and handle multiple users, each interacting with multiple decision trees. These are:
+There exist two manager classes in Atena designed to help structure and handle multiple users, each interacting with multiple decision trees. These are:
 - The **[TreeManager](../Reference/Managers.md#elysia.api.services.tree)**, which tracks and stores multiple decision trees.
 - The **[UserManager](../Reference/Managers.md#elysia.api.services.user)**, which handles multiple `TreeManager`s per user, as well as a `[ClientManager](../Reference/Client.md)` object for each user.
 

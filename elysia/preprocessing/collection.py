@@ -185,11 +185,13 @@ async def _evaluate_field_statistics(
     # Text (lengths)
     elif properties[property] == "text":
 
-        # For text, we want to evaluate the length of the text in tokens (use spacy)
+        # For text, evaluate the approximate length in words.
+        # Use split() instead of spacy nlp() to avoid O(n) spacy calls
+        # which can take minutes on large collections.
         lengths = []
         for obj in sample_objects:
             if property in obj and isinstance(obj[property], str):
-                lengths.append(len(nlp(obj[property])))
+                lengths.append(len(obj[property].split()))
 
         if len(lengths) == 0:
             out["range"] = None
@@ -248,11 +250,13 @@ async def _suggest_prompts(
     example_objects: list[dict],
     settings: Settings,
     lm: dspy.LM,
+    language: str = "it",
 ) -> list[str]:
     with ElysiaKeyManager(settings):
         prediction = await prompt_suggestor_prompt.aforward(
             collection_information=collection_information,
             example_objects=example_objects,
+            language=language,
             lm=lm,
         )
     return prediction.prompt_suggestions
@@ -337,7 +341,8 @@ async def _find_vectorisers(collection: CollectionAsync) -> dict[str, dict]:
                 ].vectorizer.vectorizer.name,
                 "model": (
                     schema_info.vector_config[vector].vectorizer.model["model"]
-                    if "model" in schema_info.vector_config[vector].vectorizer.model
+                    if schema_info.vector_config[vector].vectorizer.model is not None
+                    and "model" in schema_info.vector_config[vector].vectorizer.model
                     else None
                 ),
                 "source_properties": schema_info.vector_config[
@@ -356,7 +361,8 @@ async def _find_vectorisers(collection: CollectionAsync) -> dict[str, dict]:
             "vectorizer": schema_info.vectorizer_config.vectorizer.name,
             "model": (
                 schema_info.vectorizer_config.model["model"]
-                if "model" in schema_info.vectorizer_config.model
+                if schema_info.vectorizer_config.model is not None
+                and "model" in schema_info.vectorizer_config.model
                 else None
             ),
         }
@@ -373,6 +379,7 @@ async def preprocess_async(
     force: bool = False,
     percentage_correct_threshold: float = 0.3,
     settings: Settings = environment_settings,
+    language: str = "it",
 ) -> AsyncGenerator[dict, None]:
     """
     Preprocess a collection, obtain a LLM-generated summary of the collection,
@@ -550,6 +557,7 @@ async def preprocess_async(
             subset_objects,
             settings,
             lm,
+            language=language,
         )
 
         yield await process_update(

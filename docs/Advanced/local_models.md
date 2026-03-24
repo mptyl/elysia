@@ -1,6 +1,6 @@
-# Local Models 
+# Local Models
 
-Elysia integrates its LLM connections via [DSPy](https://dspy.ai/), which uses [LiteLLM](https://www.litellm.ai/) under the hood. The easiest way to get connected is via [Ollama](https://ollama.com/), but it is also possible to connect to OpenAI compatible endpoints. 
+Atena integrates its LLM connections via [DSPy](https://dspy.ai/), which uses [LiteLLM](https://www.litellm.ai/) under the hood. The easiest way to get connected is via [Ollama](https://ollama.com/), but it is also possible to connect to OpenAI compatible endpoints. 
 
 ## Getting Connected
 
@@ -23,7 +23,7 @@ On the app side, this is configurable via the 'Api Base URL' parameter in the Se
 
 ### Connecting via OpenAI-Compatible Endpoints (Experimental)
 
-See the [LiteLLM docs](https://docs.litellm.ai/docs/providers/openai_compatible) for more detail on using OpenAI compatible endpoints. In short, you can set your provider to `openai` and create a fake API key (e.g. `OPENAI_API_KEY=fake-key`) to enable connection to an OpenAI endpoint that is not hosted by OpenAI. You will also need to supply a `model_api_base` to the Elysia config which will point towards where your model is hosted. E.g.
+See the [LiteLLM docs](https://docs.litellm.ai/docs/providers/openai_compatible) for more detail on using OpenAI compatible endpoints. In short, you can set your provider to `openai` and create a fake API key (e.g. `OPENAI_API_KEY=fake-key`) to enable connection to an OpenAI endpoint that is not hosted by OpenAI. You will also need to supply a `model_api_base` to the Atena config which will point towards where your model is hosted. E.g.
 
 ```python
 from elysia import configure
@@ -39,30 +39,30 @@ configure(
 
 ## Warning
 
-Elysia uses a *long context*, quite long context, due to the nature of the collection schemas, long instruction sets, environment and more being included in every prompt. So these models can and will probably run quite slowly, if hosted on a machine with low compute power (e.g. not a high powered GPU). 
+Atena uses a *long context*, quite long context, due to the nature of the collection schemas, long instruction sets, environment and more being included in every prompt. So these models can and will probably run quite slowly, if hosted on a machine with low compute power (e.g. not a high powered GPU). 
 
 ## Recommendations
 
 ### Model Choice
 
-The [`gpt-oss` family of models](https://ollama.com/library/gpt-oss) have been shown to work well with Elysia, and can handle the structured outputs well. These are trained specifically for agentic tasks and reasoning chains.
+The [`gpt-oss` family of models](https://ollama.com/library/gpt-oss) have been shown to work well with Atena, and can handle the structured outputs well. These are trained specifically for agentic tasks and reasoning chains.
 
 Please let us know on the [GitHub discussions](https://github.com/weaviate/elysia/discussions) if you've had any success with any other models.
 
 ### Speeding Up
 
-**Disabling complex Weaviate integration to Elysia**
+**Disabling complex Weaviate integration to Atena**
 
-Within the python package, you can configure the Elysia process to be faster by disabling connection to your Weaviate cluster, if applicable, by removing your weaviate api key and url. Or, there is an optional setting on initialising the `Tree` to disable using Weaviate collections in Elysia:
+Within the python package, you can configure the Atena process to be faster by disabling connection to your Weaviate cluster, if applicable, by removing your weaviate api key and url. Or, there is an optional setting on initialising the `Tree` to disable using Weaviate collections in Atena:
 
 ```python
 from elysia import Tree
 tree = Tree(use_elysia_collections=False)
 ```
 
-Setting this to `False` (default `True`) will disable the Elysia decision agent having access to the [preprocessed schemas](https://weaviate.github.io/elysia/setting_up/#preprocessing-collections) for any connected Weaviate collections. If you are not using a complex Weaviate integration, then this is safe to disable.
+Setting this to `False` (default `True`) will disable the Atena decision agent having access to the [preprocessed schemas](https://weaviate.github.io/elysia/setting_up/#preprocessing-collections) for any connected Weaviate collections. If you are not using a complex Weaviate integration, then this is safe to disable.
 
-*Note that this also disables the inbuilt Query and Aggregate tools that Elysia is by default initialised to. If you are doing this, you should also add your own custom tools to Elysia for it to be worth anything! [See here for an intro to creating tools.](https://weaviate.github.io/elysia/creating_tools/)*
+*Note that this also disables the inbuilt Query and Aggregate tools that Atena is by default initialised to. If you are doing this, you should also add your own custom tools to Atena for it to be worth anything! [See here for an intro to creating tools.](https://weaviate.github.io/elysia/creating_tools/)*
 
 **Disabling chain of thought reasoning (Experimental)**
 
@@ -82,13 +82,13 @@ You can choose to disable just for the base model (e.g. the decision agent) or j
 
 **Future Plans**
 
-Future versions of Elysia will hopefully include a simplified version of the system instructions and inputs to the decision agent/tools, that can be enabled via a flag in configure, e.g. `configure(..., simplify=True)` that will shrink the context size cleverly.
+Future versions of Atena will hopefully include a simplified version of the system instructions and inputs to the decision agent/tools, that can be enabled via a flag in configure, e.g. `configure(..., simplify=True)` that will shrink the context size cleverly.
 
-Stay tuned for more improvements coming to local models in Elysia by following/starring the [GitHub repository](https://github.com/weaviate/elysia). Or feel free to make a contribution!
+Stay tuned for more improvements coming to local models in Atena by following/starring the [GitHub repository](https://github.com/weaviate/elysia). Or feel free to make a contribution!
 
 ## Troubleshooting
 
-### When using local models, Elysia times out in the app, and I get an error
+### When using local models, Atena times out in the app, and I get an error
 
 Try configuring your Tree Timeout in the configuration page to be higher. If a single request takes longer than this value, the conversation will time out and lead to an error.
 
@@ -100,7 +100,7 @@ This could be one of many things:
 - Your model connection is failing
 - A smaller local model may be failing to include every output in the response, or failing the structured output of DSPy. Try a larger model if you can with the same prompt, to see if the error persists.  If all the errors continue happening, [open a GitHub issue](https://github.com/weaviate/elysia/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen)!
 
-### Nothing is helping, Elysia still isn't running with my local model
+### Nothing is helping, Atena still isn't running with my local model
 
 In Python, test the connection to your local model through [LiteLLM directly](https://docs.litellm.ai/docs/providers/ollama):
 
@@ -115,7 +115,7 @@ response = completion(
 print(response)
 ```
 
-If the response is failing, then there is likely a problem with your connection to your model or Ollama (or very unlikely, LiteLLM). If this works, then try the connection in Elysia:
+If the response is failing, then there is likely a problem with your connection to your model or Ollama (or very unlikely, LiteLLM). If this works, then try the connection in Atena:
 
 ```python
 from elysia import Tree, Settings

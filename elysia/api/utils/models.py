@@ -117,6 +117,20 @@ models = {
             "accuracy": "high",
         },
     },
+    "openrouter/mistralai": {
+        "mistral-large-2512": {
+            "name": "mistral-large-2512",
+            "api_keys": ["openrouter_api_key"],
+            "speed": "slow",
+            "accuracy": "high",
+        },
+        "mistral-small-3.2-24b-instruct": {
+            "name": "mistral-small-3.2-24b-instruct",
+            "api_keys": ["openrouter_api_key"],
+            "speed": "fast",
+            "accuracy": "medium",
+        },
+    },
     "gemini": {
         "gemini-3-flash-preview": {
             "name": "gemini-3-flash-preview",

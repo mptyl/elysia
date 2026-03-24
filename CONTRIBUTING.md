@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for taking the time to contribute to Elysia!
+Thank you for taking the time to contribute to Atena!
 
 > And if you like the project, but just don’t have time to contribute, that’s fine. There are other easy ways to support the project and show your appreciation, which we would also be very happy about:
 > - Star the project
@@ -30,7 +30,7 @@ A good bug report shouldn’t leave others needing to chase you up for more info
     - Python version
     - Possibly your input and the output
     - Can you reliably reproduce the issue? And can you also reproduce it with older versions?
-- For Elysia specifically, which revolves around using LLMs for tasks. Make sure that your issue is not an 'LLM issue' - is it an LLM making a mistake, calling the wrong tool? Does the problem persist when trying different LLMs? Can you try with larger LLMs that are less likely to make mistakes?
+- For Atena specifically, which revolves around using LLMs for tasks. Make sure that your issue is not an 'LLM issue' - is it an LLM making a mistake, calling the wrong tool? Does the problem persist when trying different LLMs? Can you try with larger LLMs that are less likely to make mistakes?
 
 ## Suggesting Enhancements
 
@@ -49,22 +49,22 @@ For your suggestion:
 - Provide a step-by-step description of the suggested enhancement in as many details as possible.
 - Describe the current behavior and explain which behavior you expected to see instead and why. At this point you can also tell which alternatives do not work for you.
 - You may want to include screenshots or screen recordings which help you demonstrate the steps or point out the part which the suggestion is related to.
-- Explain why this enhancement would be useful to most Elysia users. 
+- Explain why this enhancement would be useful to most Atena users. 
 
 ## Guidelines for Pull Requests
 
-Elysia uses [black](https://github.com/psf/black) for formatting Python code.
+Atena uses [black](https://github.com/psf/black) for formatting Python code.
 
 ### Branch Structure
 
-The `main` and `dev` branches will be used in active development of Elysia and will be contributing towards the next release. Pull requests that involve new features should be made to the `main` branch. Smaller improvements such as bugfixes should be made to a current release branch, prefixed with `release/`
+The `main` and `dev` branches will be used in active development of Atena and will be contributing towards the next release. Pull requests that involve new features should be made to the `main` branch. Smaller improvements such as bugfixes should be made to a current release branch, prefixed with `release/`
 
-When a new version of Elysia is released, the release tag will be created from `main` and a new branch called `release/vY.Z.x` will be created for bug fixes or chores. The `release/vY.Z.x` branch serves as the snapshot of the earlier version for fixes.
+When a new version of Atena is released, the release tag will be created from `main` and a new branch called `release/vY.Z.x` will be created for bug fixes or chores. The `release/vY.Z.x` branch serves as the snapshot of the earlier version for fixes.
 
 
 > **Example**
 >
-> Say Elysia `v0.2.0` is released, and you want to contribute a bug fix to this version. You should fork the `release/v0.2.x` branch to make your changes from there, and submit a PR to that branch. This will improve the `v0.2.x` release and new versions such as `v0.2.1` will include your changes, if approved. But if you wanted to submit a PR that includes a new feature or is not related to a bug fix, then you should make a PR to `main`.
+> Say Atena `v0.2.0` is released, and you want to contribute a bug fix to this version. You should fork the `release/v0.2.x` branch to make your changes from there, and submit a PR to that branch. This will improve the `v0.2.x` release and new versions such as `v0.2.1` will include your changes, if approved. But if you wanted to submit a PR that includes a new feature or is not related to a bug fix, then you should make a PR to `main`.
 
 ### Naming Scheme
 
@@ -90,7 +90,7 @@ Examples:
 
 ## Testing
 
-To run the tests, you need to install the dev extra of Elysia, via
+To run the tests, you need to install the dev extra of Atena, via
 ```bash
 pip install "elysia-ai[dev]"
 ```
@@ -99,12 +99,12 @@ or from the source
 pip install ".[dev]"
 ```
 
-Due to the nature of Elysia's development being heavily involved with LLMs and Weaviate collections, tests are split into two categories:
+Due to the nature of Atena's development being heavily involved with LLMs and Weaviate collections, tests are split into two categories:
 
-- `no_reqs`, which have no requirements and deal with the base functionality of Elysia
+- `no_reqs`, which have no requirements and deal with the base functionality of Atena
 - `requires_env`, which require several API keys in your environment
 
-The `requires_env` directory of tests require access to a Weaviate cluster as well as an OpenAI API key and an OpenRouter API key. There is no guarantee that running the tests in `requires_env` will be cheap - there will be a lot of LLM calls in these tests. It is not required for you to pass all of the tests in `requires_env`. Any serious contributions can be tested by the Elysia team fully without requirements for you to pay for running the tests.
+The `requires_env` directory of tests require access to a Weaviate cluster as well as an OpenAI API key and an OpenRouter API key. There is no guarantee that running the tests in `requires_env` will be cheap - there will be a lot of LLM calls in these tests. It is not required for you to pass all of the tests in `requires_env`. Any serious contributions can be tested by the Atena team fully without requirements for you to pay for running the tests.
 
 But you should be expected that if your contributions contain changes to the codebase, at least all of the tests in the `no_reqs` directory pass successfully.
 

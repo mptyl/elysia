@@ -65,6 +65,7 @@ class ForcedTextResponse(Tool):
             environment=True,
             tasks_completed=True,
             message_update=False,
+            profile_context=bool(tree_data.profile_system_prompt),
         )
 
         output = await text_response.aforward(
@@ -422,6 +423,7 @@ class DecisionNode:
                 tasks_completed=True,
                 message_update=True,
                 reasoning=tree_data.settings.BASE_USE_REASONING,
+                profile_context=bool(tree_data.profile_system_prompt),
             )
 
             decision_executor = AssertedModule(
@@ -671,6 +673,7 @@ async def get_follow_up_suggestions(
         old_suggestions=current_suggestions,
         context=context,
         num_suggestions=num_suggestions,
+        preferred_language=tree_data.preferred_language,
         lm=lm,
     )
 

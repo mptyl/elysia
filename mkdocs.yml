@@ -1,4 +1,4 @@
-site_name: Elysia API
+site_name: Atena API
 theme:
   name: material
   features:
@@ -30,7 +30,7 @@ nav:
   - Getting Started: index.md
   - Setting Up: setting_up.md
   - Basic Usage: basic.md
-  - Customising Elysia: advanced_usage.md
+  - Customising Atena: advanced_usage.md
   - Creating a Tool: creating_tools.md
   - Advanced:
     - Overview: Advanced/index.md

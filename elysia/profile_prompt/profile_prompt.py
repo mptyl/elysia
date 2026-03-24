@@ -53,7 +53,7 @@ def build_profile_system_prompt(
     XML template with actual user profile values.
 
     Args:
-        profile: User profile dict from Supabase (with nested ``org_units``).
+        profile: User profile dict from Supabase (with nested ``departments``).
         role_instructions: Role-specific standard instructions text.
 
     Returns:
@@ -64,9 +64,9 @@ def build_profile_system_prompt(
     if not template:
         return ""
 
-    # Extract org_unit name from nested join
-    org_unit = profile.get("org_units") or {}
-    org_unit_name = org_unit.get("name", _DEFAULTS["org_unit_name"])
+    # Extract department name from nested join (departments table via department_id FK)
+    dept_obj = profile.get("departments") or {}
+    org_unit_name = dept_obj.get("name", _DEFAULTS["org_unit_name"])
 
     custom_instructions = profile.get("custom_instructions", _DEFAULTS["custom_instructions"])
     custom_instructions_mode = profile.get(
@@ -101,7 +101,7 @@ def build_profile_system_prompt(
 async def fetch_and_build_profile_prompt(
     user_id: str,
     settings,
-) -> str:
+) -> tuple[str, str]:
     """
     End-to-end: fetch user profile from Supabase, fetch role instructions,
     and build the rendered system prompt.
@@ -115,17 +115,22 @@ async def fetch_and_build_profile_prompt(
             ``SUPABASE_SERVICE_ROLE_KEY``).
 
     Returns:
-        Rendered profile system prompt, or empty string.
+        Tuple of (rendered profile system prompt, preferred_language code).
+        Falls back to ``("", "it")`` on any error.
     """
+    default_language = _DEFAULTS["preferred_language"]
+
     supabase_url = getattr(settings, "SUPABASE_URL", "")
     service_role_key = getattr(settings, "SUPABASE_SERVICE_ROLE_KEY", "")
 
     if not supabase_url or not service_role_key:
-        return ""
+        return "", default_language
 
     profile = await fetch_user_profile(user_id, supabase_url, service_role_key)
     if not profile:
-        return ""
+        return "", default_language
+
+    preferred_language = profile.get("preferred_language", default_language)
 
     # Fetch role-specific instructions based on department + job_title
     department = profile.get("department") or ""
@@ -141,10 +146,11 @@ async def fetch_and_build_profile_prompt(
 
     if prompt:
         logger.info(
-            "[PROFILE-PROMPT] Built profile prompt for user=%s dept=%s title=%s",
+            "[PROFILE-PROMPT] Built profile prompt for user=%s dept=%s title=%s lang=%s",
             user_id,
             department,
             job_title,
+            preferred_language,
         )
 
-    return prompt
+    return prompt, preferred_language

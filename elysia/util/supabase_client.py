@@ -28,15 +28,15 @@ async def fetch_user_profile(
     service_role_key: str,
 ) -> dict | None:
     """
-    Fetch a user profile with joined org_unit from Supabase.
+    Fetch a user profile with joined department from Supabase.
 
-    Returns the profile dict (with nested ``org_units`` object) or ``None``
+    Returns the profile dict (with nested ``departments`` object) or ``None``
     on any error.
     """
     url = (
         f"{supabase_url}/rest/v1/user_profiles"
         f"?id=eq.{quote(user_id)}"
-        f"&select=*,org_units(*)"
+        f"&select=*,departments(*)"
     )
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:

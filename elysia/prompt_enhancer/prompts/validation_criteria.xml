@@ -11,13 +11,12 @@
     - If the suggestion is VALID (all criteria met): set is_valid=True and proceed with the
       refinement. No explanatory text is needed for valid suggestions.
     - If the suggestion is INVALID (one or more criteria not met): set is_valid=False and
-      generate helpful, encouraging feedback in the SAME LANGUAGE as the user's suggestion
-      text. Explain which aspect is missing and provide a concrete example of how the user
-      could reformulate their suggestion to make it actionable. Never be dismissive or
-      condescending -- the goal is to help the user express their intent more clearly.
+      generate helpful, encouraging feedback in the language specified by `preferred_language`
+      ('it' = Italian, 'en' = English). Explain which aspect is missing and provide a concrete
+      example of how the user could reformulate their suggestion to make it actionable. Never
+      be dismissive or condescending -- the goal is to help the user express their intent more clearly.
 
-    LANGUAGE RULE: Your feedback text MUST be in the same language as the user's suggestion.
-    If the suggestion is in Italian, respond in Italian. If in English, respond in English.
+    LANGUAGE RULE: Your feedback text MUST be in the language specified by `preferred_language`.
     Always match the user's language.
   </system-instruction>
 

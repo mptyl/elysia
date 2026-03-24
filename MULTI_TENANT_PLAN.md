@@ -2,7 +2,7 @@
 
 ## Contesto
 
-Attualmente il backend Elysia non ha autenticazione: il `user_id` è inviato dal client senza validazione, e tutte le collezioni Weaviate sono visibili a tutti. L'obiettivo è:
+Attualmente il backend Atena non ha autenticazione: il `user_id` è inviato dal client senza validazione, e tutte le collezioni Weaviate sono visibili a tutti. L'obiettivo è:
 - **Validare il JWT Supabase** nel backend (offline con JWT_SECRET condiviso)
 - **Isolare l'accesso alle collezioni** per organizzazione (da `companyName` nel token LDAP)
 - **Default**: tutti hanno accesso a `UNIInternalDocs`

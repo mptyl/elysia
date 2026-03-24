@@ -1,14 +1,14 @@
-# Welcome to Elysia
+# Welcome to Atena
 
-Elysia is an agentic platform designed to use tools in a decision tree. A decision agent decides which tools to use dynamically based on its environment and context. You can use custom tools or use the pre-built tools designed to retrieve your data in a Weaviate cluster.
+Atena is an agentic platform designed to use tools in a decision tree. A decision agent decides which tools to use dynamically based on its environment and context. You can use custom tools or use the pre-built tools designed to retrieve your data in a Weaviate cluster.
 
-See the [basic example to get started right away!](basic.md) Or if you want to make your own tools and customise Elysia, see how to [easily add your own tools](creating_tools.md).
+See the [basic example to get started right away!](basic.md) Or if you want to make your own tools and customise Atena, see how to [easily add your own tools](creating_tools.md).
 
 ## Get Started
 
-To use Elysia, you need to either set up your models and API keys in your `.env` file, or specify them in the config. [See the setup page to get started.](setting_up.md)
+To use Atena, you need to either set up your models and API keys in your `.env` file, or specify them in the config. [See the setup page to get started.](setting_up.md)
 
-Elysia can be used very simply:
+Atena can be used very simply:
 ```python
 from elysia import tool, Tree
 
@@ -21,7 +21,7 @@ async def add(x: int, y: int) -> int:
 tree("What is the sum of 9009 and 6006?")
 ```
 
-Elysia is pre-configured to be capable of connecting to and interacting with your [Weaviate](https://weaviate.io/deployment/serverless) clusters!
+Atena is pre-configured to be capable of connecting to and interacting with your [Weaviate](https://weaviate.io/deployment/serverless) clusters!
 ```python
 from elysia import Tree
 tree = Tree()
@@ -44,17 +44,17 @@ Then, either run the app via
 elysia start
 ```
 
-(Additionally you can use `--port XXXX` to run from a different port, default is 8090). Or import Elysia with python and use it directly there.
+(Additionally you can use `--port XXXX` to run from a different port, default is 8090). Or import Atena with python and use it directly there.
 
 ## Usage
 
-Elysia is free, open source, and available to anyone.
+Atena is free, open source, and available to anyone.
 
-Unlike other agent-based packages, Elysia is pre-configured to run a wide range of tools and has a lot of capabilities straight away. For example, you could just call Elysia on your Weaviate collections and it will immediately and dynamically search your data, using custom queries with filters or aggregations.
+Unlike other agent-based packages, Atena is pre-configured to run a wide range of tools and has a lot of capabilities straight away. For example, you could just call Atena on your Weaviate collections and it will immediately and dynamically search your data, using custom queries with filters or aggregations.
 
-Or you could customise Elysia to your liking, create your own custom tools and add them to the Elysia decision tree.
+Or you could customise Atena to your liking, create your own custom tools and add them to the Atena decision tree.
 
-To use Elysia to search your data, you need to either have [a Weaviate cloud cluster or a locally running Weaviate instance](setting_up.md#weaviate-integration) (or you can define your own custom tool to search another data source!).
+To use Atena to search your data, you need to either have [a Weaviate cloud cluster or a locally running Weaviate instance](setting_up.md#weaviate-integration) (or you can define your own custom tool to search another data source!).
 
 [Sign up to Weaviate Cloud! A 14 day sandbox cluster is free.](https://weaviate.io/deployment/serverless)
 
@@ -70,7 +70,7 @@ Check out the Github Repositories for the backend and the frontend
 
 - [elysia-frontend](https://github.com/weaviate/elysia-frontend) (frontend)
 
-Elysia was developed by Edward Schmuhl (frontend) and Danny Williams (backend). Check out our socials below:
+Atena was developed by Edward Schmuhl (frontend) and Danny Williams (backend). Check out our socials below:
 
 - [Edward's Linkedin](https://www.linkedin.com/in/edwardschmuhl/)
 

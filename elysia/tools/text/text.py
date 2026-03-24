@@ -63,6 +63,7 @@ class CitedSummarizer(Tool):
             environment=True,
             tasks_completed=True,
             message_update=False,
+            profile_context=bool(tree_data.profile_system_prompt),
         )
 
         summary = await summarizer.aforward(
@@ -119,6 +120,7 @@ class Summarizer(Tool):
             environment=True,
             tasks_completed=True,
             message_update=False,
+            profile_context=bool(tree_data.profile_system_prompt),
         )
 
         summary = await summarizer.aforward(
@@ -153,6 +155,7 @@ class TextResponse(Tool):
             environment=True,
             tasks_completed=True,
             message_update=False,
+            profile_context=bool(tree_data.profile_system_prompt),
         )
 
         output = await text_response.aforward(

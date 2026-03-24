@@ -104,7 +104,7 @@ class EthicalRefusalGenerator(dspy.Signature):
     """Generate a clear, respectful refusal message explaining why the request cannot be fulfilled.
 
     MANDATORY RULES:
-    1. Respond in the SAME LANGUAGE as the user's prompt (e.g. Italian if the user wrote in Italian).
+    1. Respond in the language specified by `preferred_language` ('it' = Italian, 'en' = English).
     2. You MUST quote the EXACT passages from the RAG context documents that are relevant to the violation.
        Format each citation as: "«quoted text»" (Nome Documento, sezione N).
        Include at least one direct quote if RAG context is available.
@@ -129,9 +129,12 @@ class EthicalRefusalGenerator(dspy.Signature):
         desc="Passages retrieved from normative PDF documents (filename and content). "
         "You MUST cite these directly with exact quotes."
     )
+    preferred_language: str = dspy.InputField(
+        desc="The user's preferred language for the response ('it' = Italian, 'en' = English)."
+    )
 
     refusal_message: str = dspy.OutputField(
-        desc="The refusal message in the user's language. MUST include direct quotes "
+        desc="The refusal message in the preferred_language. MUST include direct quotes "
         "from the RAG context documents with source attribution (document name, section)."
     )
 
@@ -141,7 +144,7 @@ class EthicalGuidanceGenerator(dspy.Signature):
     normative documents say regarding the user's question.
 
     MANDATORY RULES:
-    1. Respond in the SAME LANGUAGE as the user's prompt.
+    1. Respond in the language specified by `preferred_language` ('it' = Italian, 'en' = English).
     2. You MUST quote EXACT passages from the RAG context documents that are relevant.
        Format each citation as: "«quoted text»" (Nome Documento, sezione N).
     3. Be helpful and informative, NOT punitive or preachy.
@@ -164,9 +167,12 @@ class EthicalGuidanceGenerator(dspy.Signature):
         desc="Passages retrieved from normative PDF documents (filename and content). "
         "You MUST cite these directly with exact quotes."
     )
+    preferred_language: str = dspy.InputField(
+        desc="The user's preferred language for the response ('it' = Italian, 'en' = English)."
+    )
 
     guidance_message: str = dspy.OutputField(
-        desc="The guidance message in the user's language. MUST include direct quotes "
+        desc="The guidance message in the preferred_language. MUST include direct quotes "
         "from the RAG context documents with source attribution."
     )
 
@@ -322,6 +328,7 @@ async def generate_ethical_refusal(
     client_manager=None,
     logger: logging.Logger | None = None,
     ethical_guard_log: bool = False,
+    preferred_language: str = "it",
 ) -> str:
     """
     Generate an ethical refusal message, optionally enriched with RAG context
@@ -344,18 +351,23 @@ async def generate_ethical_refusal(
                 violated_category=category,
                 guard_reasoning=reasoning,
                 rag_context=rag_context if rag_context else "No normative documents available.",
+                preferred_language=preferred_language,
             )
         refusal_text = result.refusal_message
     except Exception as e:
         if logger:
             logger.error(f"[ETHICAL-GUARD] Refusal generation failed: {e}")
-        refusal_text = (
-            "Questa richiesta non può essere soddisfatta in quanto in conflitto con le linee guida etiche dell'organizzazione. "
-            "Si prega di riformulare la richiesta nel rispetto dei principi di dignità, uguaglianza, onestà e rispetto. / "
-            "This request cannot be fulfilled as it conflicts with our ethical guidelines. "
-            "Please rephrase your request in a way that aligns with principles of dignity, "
-            "equality, honesty, and respect."
-        )
+        if preferred_language == "en":
+            refusal_text = (
+                "This request cannot be fulfilled as it conflicts with our ethical guidelines. "
+                "Please rephrase your request in a way that aligns with principles of dignity, "
+                "equality, honesty, and respect."
+            )
+        else:
+            refusal_text = (
+                "Questa richiesta non può essere soddisfatta in quanto in conflitto con le linee guida etiche dell'organizzazione. "
+                "Si prega di riformulare la richiesta nel rispetto dei principi di dignità, uguaglianza, onestà e rispetto."
+            )
 
     if ethical_guard_log and logger:
         logger.info("[ETHICAL-GUARD] REFUSAL: sent to user")
@@ -371,6 +383,7 @@ async def generate_ethical_guidance(
     client_manager=None,
     logger: logging.Logger | None = None,
     ethical_guard_log: bool = False,
+    preferred_language: str = "it",
 ) -> str:
     """
     Generate an ethical guidance message, enriched with RAG context
@@ -393,17 +406,22 @@ async def generate_ethical_guidance(
                 relevant_category=category,
                 guard_reasoning=reasoning,
                 rag_context=rag_context if rag_context else "No normative documents available.",
+                preferred_language=preferred_language,
             )
         guidance_text = result.guidance_message
     except Exception as e:
         if logger:
             logger.error(f"[ETHICAL-GUARD] Guidance generation failed: {e}")
-        guidance_text = (
-            "La tua domanda tocca un'area regolata dalle linee guida etiche dell'organizzazione. "
-            "Ti consiglio di consultare la Carta Etica e il Codice di Condotta per informazioni specifiche. / "
-            "Your question touches an area covered by the organization's ethical guidelines. "
-            "Please consult the Ethics Charter and Code of Conduct for specific information."
-        )
+        if preferred_language == "en":
+            guidance_text = (
+                "Your question touches an area covered by the organization's ethical guidelines. "
+                "Please consult the Ethics Charter and Code of Conduct for specific information."
+            )
+        else:
+            guidance_text = (
+                "La tua domanda tocca un'area regolata dalle linee guida etiche dell'organizzazione. "
+                "Ti consiglio di consultare la Carta Etica e il Codice di Condotta per informazioni specifiche."
+            )
 
     if ethical_guard_log and logger:
         logger.info("[ETHICAL-GUARD] GUIDANCE: sent to user")

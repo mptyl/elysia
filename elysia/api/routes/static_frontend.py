@@ -2,7 +2,7 @@
 Routes for serving the static frontend build.
 
 Provides:
-- Reverse proxies: /supabase/*, /entra/*, /common/*
+- Reverse proxies: /supabase/*, /entra/*, /common/*, /n8n/*
 - Auth routes: /api/auth/authorize, /api/auth/session, /api/auth/signout,
   /api/auth/sync-profile, /auth/callback
 
@@ -44,6 +44,7 @@ SUPABASE_ANON_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "")
 AUTH_COOKIE_NAME = os.getenv("NEXT_PUBLIC_SUPABASE_AUTH_COOKIE_NAME", "sb-athena-auth-token")
 
 ENTRA_INTERNAL_URL = os.getenv("ENTRA_INTERNAL_URL", "http://127.0.0.1:8029")
+N8N_INTERNAL_URL = os.getenv("N8N_INTERNAL_URL", "http://127.0.0.1:5678")
 ENTRA_EMULATOR_INTERNAL_HOST = os.getenv(
     "ENTRA_EMULATOR_INTERNAL_HOST", "http://host.docker.internal:8029"
 )
@@ -186,6 +187,29 @@ async def proxy_supabase(path: str, request: Request):
             for val in resp.headers.get_list("set-cookie"):
                 response.headers.append("set-cookie", val)
             return response
+    return _build_response(resp)
+
+
+# ---------------------------------------------------------------------------
+# Reverse Proxy: /n8n/*
+# ---------------------------------------------------------------------------
+
+@router.api_route(
+    "/n8n/{path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+    tags=["proxy"],
+)
+async def proxy_n8n(path: str, request: Request):
+    """Proxy requests to n8n workflow automation."""
+    qs = str(request.url.query)
+    url = f"{N8N_INTERNAL_URL}/{path}" + (f"?{qs}" if qs else "")
+    body = await request.body()
+    resp = await _get_client().request(
+        method=request.method,
+        url=url,
+        headers=_forward_headers(request),
+        content=body,
+    )
     return _build_response(resp)
 
 

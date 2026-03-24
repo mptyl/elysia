@@ -8,9 +8,9 @@ pip install -U scikit-learn
 
 ## Setup
 
-### Configuring Elysia
+### Configuring Atena
 
-You can set model API keys (e.g. `OPENAI_API_KEY` or `OPENROUTER_API_KEY`) and Weaviate API keys (i.e. `WEAVIATE_API_KEY`, `WEAVIATE_URL`) in your local `.env` file, or configure Elysia in python via:
+You can set model API keys (e.g. `OPENAI_API_KEY` or `OPENROUTER_API_KEY`) and Weaviate API keys (i.e. `WEAVIATE_API_KEY`, `WEAVIATE_URL`) in your local `.env` file, or configure Atena in python via:
 
 ```python
 configure(
@@ -53,7 +53,7 @@ with ClientManager().connect_to_client() as client:
             batch.add_object({"predictor": X[i, 0], "target": Y[i]})
 ```
 
-Then this collection requires [preprocessing](../setting_up.md#preprocessing-collections) with Elysia:
+Then this collection requires [preprocessing](../setting_up.md#preprocessing-collections) with Atena:
 
 ```python
 from elysia import preprocess
@@ -68,7 +68,7 @@ We will follow the [follow the basic guideline for creating a tool](../creating_
 - The call of the tool is going to use the `LinearRegression` class from `sklearn` to fit the model.
 - The tool is going to add to the environment the labelled coefficients from the regression.
 
-To create a tool in Elysia, you can just write a python function and add the `@tool` decorator.
+To create a tool in Atena, you can just write a python function and add the `@tool` decorator.
 
 ```python
 from elysia import tool
@@ -105,8 +105,8 @@ async def fit_linear_regression(env_key, x_var, y_var, collection_name, tree_dat
 
 - The tool description is taken from the docstring of the function.
 - In this case, the inputs themselves do not receive individual descriptions, but they are provided via the tool description.
-- The `env_key`, `x_var`, `y_var` and `collection_name` arguments are specific to this tool (so they are decided by the decision agent). But the `tree_data` argument is a protected argument which will use the data in the decision tree, which is how Elysia interacts with its context and environment.
-- The returned dictionary adds the items returned will be added to Elysia's environment, so the decision tree can read this information on a future run.
+- The `env_key`, `x_var`, `y_var` and `collection_name` arguments are specific to this tool (so they are decided by the decision agent). But the `tree_data` argument is a protected argument which will use the data in the decision tree, which is how Atena interacts with its context and environment.
+- The returned dictionary adds the items returned will be added to Atena's environment, so the decision tree can read this information on a future run.
 
 ## Running the Tool
 

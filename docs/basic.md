@@ -8,7 +8,7 @@ Let's assume we have access to the following Weaviate collections:
 
 - `Tickets`: Github issues for a fictional company
 
-These Weaviate collections are those which we want to search over using Elysia.
+These Weaviate collections are those which we want to search over using Atena.
 
 ## Setup
 
@@ -29,23 +29,23 @@ configure(
 
 You need to specify both a `base_model` and a `complex_model`, as well as their providers. This hooks into LiteLLM through DSPy, [so any LiteLLM supported models and providers will work](https://docs.litellm.ai/docs/providers). [See the setup page for more details](setting_up.md).
 
-Then for a collection to be accessible within Elysia, we need to preprocess it - so that the models are aware of the schemas and information about the collection.
+Then for a collection to be accessible within Atena, we need to preprocess it - so that the models are aware of the schemas and information about the collection.
 
 ```python
 from elysia import preprocess
 preprocess("Tickets")
 ```
  
-## Running Elysia
+## Running Atena
 
-To run the Elysia decision tree, using the default setup, just call the `Tree` object!
+To run the Atena decision tree, using the default setup, just call the `Tree` object!
 
 ```python
 from elysia import Tree
 tree = Tree()
 response, objects = tree("what were the 10 most recent Github issues?")
 ```
-Elysia will _dynamically_ run through the decision tree, choosing tools to use based on the decision agent LM based on the input. The decision tree returns the concatenation of all text responses from the models, as well as any retrieved objects (anything that was added to the environment during this call).
+Atena will _dynamically_ run through the decision tree, choosing tools to use based on the decision agent LM based on the input. The decision tree returns the concatenation of all text responses from the models, as well as any retrieved objects (anything that was added to the environment during this call).
 
 ```python
 print(response)

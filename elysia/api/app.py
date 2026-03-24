@@ -1,5 +1,10 @@
 import os
+import warnings
 from contextlib import asynccontextmanager
+
+# Silence noisy deprecation/serialization warnings from dependencies (litellm, dspy)
+warnings.filterwarnings("ignore", message="Use 'content=", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -66,7 +71,7 @@ async def lifespan(app: FastAPI):
 
 
 # Create FastAPI app instance
-app = FastAPI(title="Elysia API", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="Atena API", version="0.3.0", lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(

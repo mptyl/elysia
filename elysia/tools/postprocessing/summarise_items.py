@@ -6,6 +6,7 @@ from elysia.objects import Status, Tool
 from elysia.tools.postprocessing.prompt_templates import ObjectSummaryPrompt
 from elysia.tree.objects import TreeData
 from elysia.util.client import ClientManager
+from elysia.util.elysia_chain_of_thought import ElysiaChainOfThought
 
 
 class SummariseItems(Tool):
@@ -38,7 +39,14 @@ class SummariseItems(Tool):
             ]
 
             for obj in objects_list:
-                object_summariser = dspy.ChainOfThought(ObjectSummaryPrompt)
+                object_summariser = ElysiaChainOfThought(
+                    ObjectSummaryPrompt,
+                    tree_data=tree_data,
+                    reasoning=False,
+                    impossible=False,
+                    message_update=False,
+                    profile_context=bool(tree_data.profile_system_prompt),
+                )
                 yield Status(
                     f"Summarising {len(obj.objects)} objects from {obj.metadata['collection_name']}..."
                 )

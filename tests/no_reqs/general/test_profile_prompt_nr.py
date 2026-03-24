@@ -27,10 +27,10 @@ def sample_profile():
         "response_focus": "managerial",
         "custom_instructions": "Always include a summary table.",
         "custom_instructions_mode": "append",
-        "org_units": {
-            "id": "org-uuid",
+        "departments": {
+            "id": "dept-uuid",
+            "code": "IES",
             "name": "Default",
-            "ai_identity_base": "Default organizational context",
         },
     }
 
@@ -40,7 +40,7 @@ def minimal_profile():
     """Profile with only required fields, missing optional ones."""
     return {
         "id": "test-user-uuid",
-        "org_units": None,
+        "departments": None,
     }
 
 
@@ -105,16 +105,17 @@ def test_build_empty_profile():
 # --- fetch_and_build_profile_prompt (async tests via asyncio.run) ---
 
 def test_fetch_and_build_no_supabase_config():
-    """Returns empty string when Supabase is not configured."""
+    """Returns empty prompt and default language when Supabase is not configured."""
     settings = MagicMock()
     settings.SUPABASE_URL = ""
     settings.SUPABASE_SERVICE_ROLE_KEY = ""
-    result = asyncio.run(fetch_and_build_profile_prompt("user-id", settings))
-    assert result == ""
+    prompt, lang = asyncio.run(fetch_and_build_profile_prompt("user-id", settings))
+    assert prompt == ""
+    assert lang == "it"
 
 
 def test_fetch_and_build_profile_not_found():
-    """Returns empty string when user profile is not found."""
+    """Returns empty prompt and default language when user profile is not found."""
     settings = MagicMock()
     settings.SUPABASE_URL = "http://localhost:8000"
     settings.SUPABASE_SERVICE_ROLE_KEY = "test-key"
@@ -124,8 +125,9 @@ def test_fetch_and_build_profile_not_found():
         new_callable=AsyncMock,
         return_value=None,
     ):
-        result = asyncio.run(fetch_and_build_profile_prompt("user-id", settings))
-        assert result == ""
+        prompt, lang = asyncio.run(fetch_and_build_profile_prompt("user-id", settings))
+        assert prompt == ""
+        assert lang == "it"
 
 
 def test_fetch_and_build_success(sample_profile):
@@ -143,6 +145,7 @@ def test_fetch_and_build_success(sample_profile):
         new_callable=AsyncMock,
         return_value="Role-specific instructions here.",
     ):
-        result = asyncio.run(fetch_and_build_profile_prompt("test-user-uuid", settings))
-        assert "Technical Project Manager" in result
-        assert "Role-specific instructions here." in result
+        prompt, lang = asyncio.run(fetch_and_build_profile_prompt("test-user-uuid", settings))
+        assert "Technical Project Manager" in prompt
+        assert "Role-specific instructions here." in prompt
+        assert lang == "it"

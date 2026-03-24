@@ -1,13 +1,13 @@
 
 # Advanced Tool Construction Overview
 
-This page details how to create more custom and flexible tools in Elysia, by inheriting the `Tool` class and adding it to the decision tree via the `.add_tool` of the `Tree` object.
+This page details how to create more custom and flexible tools in Atena, by inheriting the `Tool` class and adding it to the decision tree via the `.add_tool` of the `Tree` object.
 
 To see an easier method of creating tools, see the [Creating a Tool](../creating_tools.md) guide.
 
 This page will detail all relevant information for tool construction, to get started with an example, see
 - [A basic text response example](#example-text-response-basic)
-- [A more complex example dealing cards to Elysia](#example-dealing-cards-randomly-from-a-deck-intermediate)
+- [A more complex example dealing cards to Atena](#example-dealing-cards-randomly-from-a-deck-intermediate)
 
 ## Initialisation
 
@@ -43,7 +43,7 @@ A tool must be initialised with
 - `end` (optional): A bool denoting whether the tool is capable of ending the entire decision tree. For example, a `text_response` tool can end the process, but a `query` tool cannot. This is because a query tool returns some information which is then parsed by the decision tree _afterwards_, to see if the retrieved information was worthwhile. Note that setting `end=True` does not guarantee that after this tool is finished running, the decision process ends, it only allows the model to choose that performing this action _can_ end the tree.
 - `**kwargs` (required)
 
-The `logger` can be automatically assigned to the initialisation of the tool and is passed by default into the Elysia decision tree. Save this as `self.logger = logger` to use it in the tool call later.
+The `logger` can be automatically assigned to the initialisation of the tool and is passed by default into the Atena decision tree. Save this as `self.logger = logger` to use it in the tool call later.
 
 ## Tool Call
 
@@ -81,11 +81,11 @@ which has the following inputs:
 
 The `__call__` method is automatically run when the LLM decision agent chooses to use that tool. You can use any of these inputs within your tool method and the code will be executed.
 
-Within the `__call__` method of the tool, you will want to interact with the decision tree in some way. There are multiple ways of doing this, either via returning various objects that Elysia defines within `elysia.objects`, or by interacting with the environment.
+Within the `__call__` method of the tool, you will want to interact with the decision tree in some way. There are multiple ways of doing this, either via returning various objects that Atena defines within `elysia.objects`, or by interacting with the environment.
 
 ### Returning Objects
 
-If you return an Elysia specific object, they will be returned to the decision tree and automatically parsed in different ways which automatically add the relevant objects to the environment, and send any payloads to the frontend.
+If you return an Atena specific object, they will be returned to the decision tree and automatically parsed in different ways which automatically add the relevant objects to the environment, and send any payloads to the frontend.
 
 Within your tool's call method, you may want to `yield` different objects to bring them back to the tree.
 
@@ -136,7 +136,7 @@ You can yield a `Result` to the frontend, and by specifying the `payload_type`, 
 
 To display your objects without any mappings or display types, you can specify the payload type as `table`.
 
-## Easy LLM calls with Elysia Chain of Thought
+## Easy LLM calls with Atena Chain of Thought
 
 An easy way to access attributes from the tree (if you are calling an LLM within the tool) is to use the custom `ElysiaChainOfThought` DSPy module with specific arguments. This automatically adds information from the `tree_data` to an LLM prompt as inputs in a DSPy signature, as well as some specific outputs deemed useful within the decision tree environment (and a chain of thought reasoning field output field).
 
@@ -172,7 +172,7 @@ To add a Tool to be evaluated in the tree, just run `.add_tool`. For example
 ```
 This will add the `TextResponse` tool to the root branch, by default (the base of the decision tree).
 
-Elysia sometimes has *branches* in the decision tree, which can be created via `add_branch`. If you want to add a tool to a particular branch, specify the `branch_id`, e..g if we have a branch called "responses", then
+Atena sometimes has *branches* in the decision tree, which can be created via `add_branch`. If you want to add a tool to a particular branch, specify the `branch_id`, e..g if we have a branch called "responses", then
 
 ```python 
 .add_tool(TextResponse, branch_id="responses")
@@ -197,7 +197,7 @@ The `Error` object is initialised with a single string argument, which should be
 
 *Note that this does not raise an error within Python, it is used to 'inform' the LLM that a potentially preventable error has occurred somewhere within the tool.*
 
-**For example**, the Query tool built into Elysia will yield `Error` objects if the LLM creates a query which fails to run in Weaviate, such as not having the correct filter type for a particular property. The decision agent will read the error, and perhaps try to call the query tool again. Upon seeing the previous error in the error history, the query LLM agent should see that it should instead use a different filter property type, and correct itself.
+**For example**, the Query tool built into Atena will yield `Error` objects if the LLM creates a query which fails to run in Weaviate, such as not having the correct filter type for a particular property. The decision agent will read the error, and perhaps try to call the query tool again. Upon seeing the previous error in the error history, the query LLM agent should see that it should instead use a different filter property type, and correct itself.
 
 ## Advanced Tool Methods
 
@@ -255,7 +255,7 @@ You should give a brief reason in the docstring of `is_tool_available` as to whe
 
 ## Example: Text Response (basic)
 
-Consider the generic text response tool that Elysia will use if the conversation ends without a sufficient answer.
+Consider the generic text response tool that Atena will use if the conversation ends without a sufficient answer.
 
 ```python
 import dspy
@@ -309,7 +309,7 @@ The tool is simple, it is initialised and the descriptions are added to the Tool
 
 Let's create a tool that deals cards, adds them to the environment and displays them on the frontend.
 
-Just for fun, these cards, when they are dealt, change the Elysia conversation somewhat, by some modifiers we will define ourselves.
+Just for fun, these cards, when they are dealt, change the Atena conversation somewhat, by some modifiers we will define ourselves.
 
 ```python
 import random
@@ -344,31 +344,31 @@ class DealCards(Tool):
         possible_cards = [
             {
                 "title": "The Jumbled",
-                "effect": "Sometimes, the Elysia agent will say words in the wrong order.",
+                "effect": "Sometimes, the Atena agent will say words in the wrong order.",
                 "rarity": 3,
                 "image": "https://i.imgur.com/KdGeZTp.png",
             },
             {
                 "title": "The Comedian",
-                "effect": "At the end of every sentence, the Elysia agent will tell a joke.",
+                "effect": "At the end of every sentence, the Atena agent will tell a joke.",
                 "rarity": 2,
                 "image": "https://i.imgur.com/I8yVXHa.png",
             },
             {
                 "title": "The Sarcastic",
-                "effect": "Most interactions end with the Elysia agent making a sarcastic remark.",
+                "effect": "Most interactions end with the Atena agent making a sarcastic remark.",
                 "rarity": 1,
                 "image": "https://i.imgur.com/oFkwt1M.png",
             },
             {
                 "title": "The Bro",
-                "effect": "Elysia must now use the word 'bro' a lot more, and apply similar slang everywhere.",
+                "effect": "Atena must now use the word 'bro' a lot more, and apply similar slang everywhere.",
                 "rarity": 1,
                 "image": "https://i.imgur.com/J6dLbTZ.png",
             },
             {
                 "title": "The Philosopher",
-                "effect": "The Elysia agent will now try to philosophise at every opportunity.",
+                "effect": "The Atena agent will now try to philosophise at every opportunity.",
                 "rarity": 3,
                 "image": "https://i.imgur.com/D6VSitF.png",
             },
@@ -411,7 +411,7 @@ Let's break down the different components of this tool.
     - The `__call__` method, when the tool gets chosen, simply calls the `select_random_cards` method with the input that has come from the decision agent. 
     - Then it yields an `Ecommerce` object (placeholder) which will display the card. 
     - Since the `Ecommerce` object has pre-defined fields, to choose which of the card's fields go where, the `mapping` places the card `effect` in the Ecommerce `description`, the card `title` in place of the `name` field, the `rarity` becomes the `price` and the image field name is the same, but it is mapped anyway.
-    - The `llm_message` argument of the Ecommerce `Result`, describes what happens to the LLM whenever this tool is completed. This `llm_message` is persistent through further calls in Elysia, it will remain there for all future events in this conversation. In this case, it re-iterates the point that the cards add custom modifiers, and shows how many cards were dealt to the user at this point.
+    - The `llm_message` argument of the Ecommerce `Result`, describes what happens to the LLM whenever this tool is completed. This `llm_message` is persistent through further calls in Atena, it will remain there for all future events in this conversation. In this case, it re-iterates the point that the cards add custom modifiers, and shows how many cards were dealt to the user at this point.
 
 We could add more features to this card, for example, modifying the `tree_data.environment` object to find any existing cards in the environment (with the name "cards") and overwriting them with the new deal.
 
