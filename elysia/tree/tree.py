@@ -1841,8 +1841,26 @@ class Tree:
                 time_taken_seconds=time.time() - self.start_time,
             )
 
+            usage = {
+                "base_lm": {
+                    "total_input_tokens": self.tracker.get_total_input_tokens("base_lm"),
+                    "total_output_tokens": self.tracker.get_total_output_tokens(
+                        "base_lm"
+                    ),
+                },
+                "complex_lm": {
+                    "total_input_tokens": self.tracker.get_total_input_tokens(
+                        "complex_lm"
+                    ),
+                    "total_output_tokens": self.tracker.get_total_output_tokens(
+                        "complex_lm"
+                    ),
+                },
+            }
+
             yield await self.returner(
-                Completed(rag_enabled=self.tree_data.rag_enabled), query_id=self.prompt_to_query_id[user_prompt]
+                Completed(rag_enabled=self.tree_data.rag_enabled, usage=usage),
+                query_id=self.prompt_to_query_id[user_prompt],
             )
 
             self.settings.logger.debug(

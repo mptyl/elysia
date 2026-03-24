@@ -613,8 +613,10 @@ class Completed(Update):
     Includes rag_enabled to indicate whether RAG was enabled for this query.
     """
 
-    def __init__(self, rag_enabled: bool = True):
-        Update.__init__(self, "completed", {"rag_enabled": rag_enabled})
+    def __init__(self, rag_enabled: bool = True, usage: dict | None = None):
+        Update.__init__(
+            self, "completed", {"rag_enabled": rag_enabled, "usage": usage}
+        )
 
 
 class Result(Return):
