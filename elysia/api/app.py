@@ -138,11 +138,19 @@ app.mount(
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="app")
 
 
+_NO_CACHE_HEADERS = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+
+
+def _html_response(path: str) -> FileResponse:
+    """Serve an HTML file with no-cache headers so the browser always gets fresh chunk references."""
+    return FileResponse(path, headers=_NO_CACHE_HEADERS)
+
+
 @app.get("/")
 @app.head("/")
 async def serve_frontend():
     if os.path.exists(os.path.join(BASE_DIR, "static/index.html")):
-        return FileResponse(os.path.join(BASE_DIR, "static/index.html"))
+        return _html_response(os.path.join(BASE_DIR, "static/index.html"))
     else:
         return None
 
@@ -154,11 +162,11 @@ async def serve_spa_fallback(full_path: str):
     # Try exact HTML file (e.g., /login → static/login.html)
     html_file = os.path.join(static_dir, f"{full_path}.html")
     if os.path.isfile(html_file):
-        return FileResponse(html_file)
+        return _html_response(html_file)
     # Try as directory with index.html
     index_file = os.path.join(static_dir, full_path, "index.html")
     if os.path.isfile(index_file):
-        return FileResponse(index_file)
+        return _html_response(index_file)
     # Try exact file (e.g., /icon.svg)
     exact_file = os.path.join(static_dir, full_path)
     if os.path.isfile(exact_file):
@@ -166,5 +174,5 @@ async def serve_spa_fallback(full_path: str):
     # SPA fallback
     fallback = os.path.join(static_dir, "index.html")
     if os.path.isfile(fallback):
-        return FileResponse(fallback)
+        return _html_response(fallback)
     return None
