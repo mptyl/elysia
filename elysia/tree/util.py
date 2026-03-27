@@ -744,6 +744,39 @@ async def get_saved_trees_weaviate(
     return trees
 
 
+async def rename_tree_in_weaviate(
+    conversation_id: str,
+    new_title: str,
+    collection_name: str,
+    client_manager: ClientManager | None = None,
+):
+    """
+    Update only the title property of a saved tree in Weaviate.
+
+    Args:
+        conversation_id (str): The conversation ID of the tree to rename.
+        new_title (str): The new title for the conversation.
+        collection_name (str): The name of the collection.
+        client_manager (ClientManager): The client manager to use.
+            If not provided, a new ClientManager will be created from environment variables.
+    """
+    if client_manager is None:
+        client_manager = ClientManager()
+
+    async with client_manager.connect_to_async_client() as client:
+        collection = client.collections.get(collection_name)
+        uuid = generate_uuid5(conversation_id)
+        if await collection.data.exists(uuid):
+            await collection.data.update(
+                uuid=uuid,
+                properties={"title": new_title},
+            )
+        else:
+            raise ValueError(
+                f"Tree with conversation_id '{conversation_id}' not found in collection '{collection_name}'"
+            )
+
+
 async def delete_tree_from_weaviate(
     conversation_id: str,
     collection_name: str,

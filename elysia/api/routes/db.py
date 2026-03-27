@@ -1,13 +1,19 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from elysia.api.dependencies.common import get_user_manager
 from elysia.api.services.user import UserManager
+from elysia.tree.util import rename_tree_in_weaviate
 
 # Logging
 from elysia.api.core.log import logger
 
 router = APIRouter()
+
+
+class RenameData(BaseModel):
+    title: str
 
 
 @router.get("/{user_id}/saved_trees")
@@ -85,6 +91,30 @@ async def save_tree(
         return JSONResponse(content={"error": ""}, status_code=200)
     except Exception as e:
         logger.error(f"Error saving tree: {str(e)}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@router.patch("/{user_id}/rename_tree/{conversation_id}")
+async def rename_tree(
+    user_id: str,
+    conversation_id: str,
+    data: RenameData,
+    user_manager: UserManager = Depends(get_user_manager),
+):
+    try:
+        await user_manager.add_user_local(user_id)
+        user = await user_manager.get_user_local(user_id)
+        save_location_client_manager = user["frontend_config"].save_location_client_manager
+
+        await rename_tree_in_weaviate(
+            conversation_id=conversation_id,
+            new_title=data.title,
+            collection_name="ELYSIA_TREES__",
+            client_manager=save_location_client_manager,
+        )
+        return JSONResponse(content={"error": ""}, status_code=200)
+    except Exception as e:
+        logger.error(f"Error renaming tree: {str(e)}")
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
