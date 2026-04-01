@@ -178,4 +178,7 @@ elysia/api/user_configs/
 rundocs.sh
 runpy.sh
 
+# Claude Code worktrees
+.worktrees/
+
 
