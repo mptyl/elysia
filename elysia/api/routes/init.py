@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from cryptography.fernet import InvalidToken
 
-from elysia.api.api_types import InitialiseTreeData
+from elysia.api.api_types import InitialiseTreeData, InitialiseUserData
 from elysia.api.dependencies.common import get_user_manager
 from elysia.api.services.user import UserManager
 from elysia.api.core.log import logger
@@ -50,7 +50,9 @@ async def get_default_config(
 
 @router.post("/user/{user_id}")
 async def initialise_user(
-    user_id: str, user_manager: UserManager = Depends(get_user_manager)
+    user_id: str,
+    data: InitialiseUserData | None = None,
+    user_manager: UserManager = Depends(get_user_manager),
 ):
     """
     Create or retrieve a user.
@@ -67,6 +69,7 @@ async def initialise_user(
     try:
 
         user_exists = user_manager.user_exists(user_id)
+        roles = data.roles if data else []
 
         # if a user does not exist, create a user and set up the configs
         if not user_exists:
@@ -105,6 +108,7 @@ async def initialise_user(
 
         # if a user exists, get the existing configs
         user = await user_manager.get_user_local(user_id)
+        user_manager.users[user_id]["roles"] = roles
         config = user["tree_manager"].config.to_json()
         frontend_config = user["frontend_config"].to_json()
 
