@@ -9,7 +9,7 @@ from elysia.api.dependencies.common import get_user_manager
 set_log_level("CRITICAL")
 
 from elysia.api.routes.init import initialise_tree, initialise_user
-from elysia.api.api_types import InitialiseTreeData
+from elysia.api.api_types import InitialiseTreeData, InitialiseUserData
 
 
 def read_response(response: JSONResponse):
@@ -26,6 +26,7 @@ class TestTree:
         # Initialise when a user does not exist
         out = await initialise_user(
             user_id,
+            None,
             user_manager,
         )
 
@@ -46,6 +47,7 @@ class TestTree:
         # Initialise when a user exists
         out = await initialise_user(
             user_id,
+            None,
             user_manager,
         )
 
@@ -62,6 +64,7 @@ class TestTree:
 
         out = await initialise_user(
             user_id,
+            None,
             user_manager,
         )
         response = read_response(out)
@@ -90,3 +93,34 @@ class TestTree:
 
         response = read_response(out)
         assert response["error"] == ""  # new user is created on the fly
+
+    @pytest.mark.asyncio
+    async def test_initialise_user_with_roles(self):
+        user_manager = get_user_manager()
+        user_id = "test_user_roles"
+
+        out = await initialise_user(
+            user_id,
+            InitialiseUserData(roles=["USER", "ADMIN"]),
+            user_manager,
+        )
+
+        response = read_response(out)
+        assert response["error"] == ""
+        assert response["user_exists"] is False
+        assert user_manager.users[user_id]["roles"] == ["USER", "ADMIN"]
+
+    @pytest.mark.asyncio
+    async def test_initialise_user_without_roles(self):
+        user_manager = get_user_manager()
+        user_id = "test_user_no_roles"
+
+        out = await initialise_user(
+            user_id,
+            None,
+            user_manager,
+        )
+
+        response = read_response(out)
+        assert response["error"] == ""
+        assert user_manager.users[user_id]["roles"] == []

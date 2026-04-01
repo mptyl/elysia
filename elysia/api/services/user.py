@@ -205,6 +205,8 @@ class UserManager:
             except Exception:
                 self.users[user_id]["preferred_language"] = "it"
 
+            self.users[user_id]["roles"] = []
+
     async def get_user_local(self, user_id: str):
         """
         Return a local user object.

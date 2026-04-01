@@ -26,6 +26,10 @@ class InitialiseTreeData(BaseModel):
     low_memory: bool = False
 
 
+class InitialiseUserData(BaseModel):
+    roles: list[str] = []
+
+
 class MetadataNamedVectorData(BaseModel):
     name: str
     enabled: Optional[bool] = None
