@@ -2,7 +2,7 @@ import asyncio
 import time
 
 import psutil
-from typing import Callable
+from typing import Callable, Optional
 from fastapi import WebSocket
 from starlette.websockets import WebSocketDisconnect
 
@@ -13,100 +13,90 @@ from elysia.api.core.log import logger
 from elysia.api.utils.default_payloads import error_payload
 
 
-async def help_websocket(websocket: WebSocket, ws_route: Callable):
+async def help_websocket(
+    websocket: WebSocket,
+    ws_route: Callable,
+    cancel_handler: Optional[Callable] = None,
+):
     memory_process = psutil.Process()
-    # initial_memory = memory_process.memory_info().rss
     try:
         await websocket.accept()
         while True:
             try:
-                # start_time = time.time()
+                data = None
+                last_communication = time.time()
+
                 # Wait for a message from the client
-                # logger.info(f"Memory usage before receiving: {psutil.Process().memory_info().rss / 1024 / 1024}MB")
-                try:
-                    data = None
-                    last_communication = time.time()
+                while True:
+                    if time.time() - last_communication > 60:
+                        await websocket.send_json({"type": "heartbeat"})
+                        last_communication = time.time()
 
-                    # Custom timeout handler
-                    while True:
-                        if time.time() - last_communication > 60:
-                            # logger.warning("No communication for 60 seconds - sending heartbeat")
-                            await websocket.send_json({"type": "heartbeat"})
-                            last_communication = time.time()
+                    try:
+                        data = await asyncio.wait_for(
+                            websocket.receive_json(), timeout=1.0
+                        )
+                        last_communication = time.time()
 
-                        try:
-                            # Use a short timeout for receive_json to allow checking the timer
-                            data = await asyncio.wait_for(
-                                websocket.receive_json(), timeout=1.0
-                            )
-                            last_communication = time.time()
-
-                            # Process the received data
-                            await ws_route(data, websocket)
-                            last_communication = (
-                                time.time()
-                            )  # Update timer after processing
-
-                            # Check if it's a disconnect request
-                            if data.get("type") == "disconnect":
-                                return
-
-                        except asyncio.TimeoutError:
+                        # Handle cancel messages
+                        if data.get("type") == "cancel" and cancel_handler:
+                            await cancel_handler(data, websocket)
                             continue
 
-                except (WebSocketDisconnect, RuntimeError):
-                    raise  # Let outer handlers manage disconnect
-                except Exception as e:
-                    error = error_payload(text=str(e), conversation_id="", query_id="")
-                    await websocket.send_json(error)
-                    logger.error(f"Error in websocket communication: {str(e)}")
+                        # Check if it's a disconnect request
+                        if data.get("type") == "disconnect":
+                            return
 
-                # logger.info(f"Memory usage after receiving: {psutil.Process().memory_info().rss / 1024 / 1024}MB")
-                # logger.info(f"Processing time: {time.time() - start_time}s")
+                        # Process the received data as a task so we can
+                        # continue listening for cancel messages
+                        process_task = asyncio.create_task(
+                            ws_route(data, websocket)
+                        )
 
-            except WebSocketDisconnect:
-                # logger.info("WebSocket disconnected", exc_info=True)
-                break  # Exit the loop on disconnect
+                        # While processing, keep listening for cancel messages
+                        while not process_task.done():
+                            try:
+                                msg = await asyncio.wait_for(
+                                    websocket.receive_json(), timeout=1.0
+                                )
+                                last_communication = time.time()
 
-            except RuntimeError as e:
-                if (
-                    "Cannot call 'receive' once a disconnect message has been received"
-                    in str(e)
-                ):
-                    # logger.info("WebSocket already disconnected")
-                    break  # Exit the loop if the connection is already closed
-                else:
-                    raise  # Re-raise other RuntimeErrors
+                                if msg.get("type") == "cancel" and cancel_handler:
+                                    await cancel_handler(msg, websocket)
+                                elif msg.get("type") == "disconnect":
+                                    process_task.cancel()
+                                    return
+                            except asyncio.TimeoutError:
+                                if time.time() - last_communication > 60:
+                                    await websocket.send_json({"type": "heartbeat"})
+                                    last_communication = time.time()
+                                continue
 
+                        # Propagate any exceptions from the task
+                        await process_task
+
+                        last_communication = time.time()
+
+                    except asyncio.TimeoutError:
+                        continue
+
+            except (WebSocketDisconnect, RuntimeError):
+                raise  # Let outer handlers manage disconnect
             except Exception as e:
-                logger.error(f"Error in WebSocket: {str(e)}")
-                try:
-                    if data and "conversation_id" in data and "query_id" in data:
-                        error = error_payload(
-                            text=str(e),
-                            conversation_id=data["conversation_id"],
-                            query_id=data["query_id"],
-                        )
-                        await websocket.send_json(error)
-                    elif data and "conversation_id" in data:
-                        error = error_payload(
-                            text=str(e),
-                            conversation_id=data["conversation_id"],
-                            query_id="",
-                        )
-                        await websocket.send_json(error)
-                    else:
-                        error = error_payload(
-                            text=str(e), conversation_id="", query_id=""
-                        )
-                        await websocket.send_json(error)
+                error = error_payload(
+                    text=str(e),
+                    conversation_id=data.get("conversation_id", "") if data else "",
+                    query_id=data.get("query_id", "") if data else "",
+                )
+                await websocket.send_json(error)
+                logger.error(f"Error in websocket communication: {str(e)}")
 
-                except RuntimeError:
-                    logger.warning(
-                        "Failed to send error message, WebSocket might be closed"
-                    )
-                break  # Exit the loop after sending the error message
-
+    except (WebSocketDisconnect, RuntimeError) as e:
+        if isinstance(e, RuntimeError) and (
+            "Cannot call 'receive' once a disconnect message has been received"
+            not in str(e)
+        ):
+            raise
     except Exception as e:
         logger.warning(f"Closing WebSocket: {str(e)}")
     finally:

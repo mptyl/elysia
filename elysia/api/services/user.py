@@ -557,6 +557,11 @@ class UserManager:
     async def update_user_last_request(self, user_id: str):
         self.users[user_id]["last_request"] = datetime.datetime.now()
 
+    async def cancel_query(self, user_id: str, conversation_id: str):
+        local_user = await self.get_user_local(user_id)
+        tree_manager: TreeManager = local_user["tree_manager"]
+        tree_manager.request_cancel(conversation_id)
+
     def check_tree_timeout(self, user_id: str, conversation_id: str):
         if user_id not in self.users:
             return True

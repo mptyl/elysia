@@ -127,6 +127,7 @@ class TreeManager:
                 ),
                 "last_request": datetime.datetime.now(),
                 "event": asyncio.Event(),
+                "cancel_event": asyncio.Event(),
             }
             self.trees[conversation_id]["event"].set()
 
@@ -191,6 +192,7 @@ class TreeManager:
             self.trees[conversation_id] = {
                 "tree": None,
                 "event": asyncio.Event(),
+                "cancel_event": asyncio.Event(),
                 "last_request": datetime.datetime.now(),
             }
         self.trees[conversation_id]["tree"] = tree
@@ -265,6 +267,19 @@ class TreeManager:
             (asyncio.Event): The event for the tree.
         """
         return self.trees[conversation_id]["event"]
+
+    def request_cancel(self, conversation_id: str):
+        if conversation_id in self.trees:
+            self.trees[conversation_id]["cancel_event"].set()
+
+    def is_cancelled(self, conversation_id: str) -> bool:
+        if conversation_id in self.trees:
+            return self.trees[conversation_id]["cancel_event"].is_set()
+        return False
+
+    def reset_cancel(self, conversation_id: str):
+        if conversation_id in self.trees:
+            self.trees[conversation_id]["cancel_event"].clear()
 
     def configure(
         self, conversation_id: str | None = None, replace: bool = False, **kwargs: Any
@@ -428,6 +443,7 @@ class TreeManager:
 
         # clear the event, set it to working
         self.trees[conversation_id]["event"].clear()
+        self.reset_cancel(conversation_id)
 
         try:
             async for yielded_result in tree.async_run(
@@ -439,6 +455,8 @@ class TreeManager:
                 close_clients_after_completion=False,
                 disable_rag=disable_rag,
             ):
+                if self.is_cancelled(conversation_id):
+                    break
                 yield yielded_result
                 self.update_tree_last_request(conversation_id)
 

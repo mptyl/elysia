@@ -167,6 +167,19 @@ async def process(data: dict, websocket: WebSocket, user_manager: UserManager):
             await websocket.send_json(error)
 
 
+async def handle_cancel(data: dict, websocket: WebSocket, user_manager: UserManager):
+    logger.debug(f"Cancel request received for conversation {data.get('conversation_id')}")
+    await user_manager.cancel_query(data["user_id"], data["conversation_id"])
+    await websocket.send_json({
+        "type": "cancelled",
+        "id": str(uuid.uuid4()),
+        "conversation_id": data.get("conversation_id", ""),
+        "query_id": data.get("query_id", ""),
+        "user_id": data.get("user_id", ""),
+        "payload": {},
+    })
+
+
 # Process endpoint
 @router.websocket("/query")
 async def query_websocket(
@@ -177,4 +190,8 @@ async def query_websocket(
     Handles real-time communication for pipeline execution and status updates.
     """
 
-    await help_websocket(websocket, lambda data, ws: process(data, ws, user_manager))
+    await help_websocket(
+        websocket,
+        lambda data, ws: process(data, ws, user_manager),
+        cancel_handler=lambda data, ws: handle_cancel(data, ws, user_manager),
+    )
